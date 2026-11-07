@@ -81,22 +81,28 @@ async function run() {
  * Action never sends code anywhere new unless the workflow asks for it.
  */
 function aiFromInputs(): ReviewOptions["ai"] {
-  const apiKey = core.getInput("anthropic-api-key");
-  if (apiKey) core.setSecret(apiKey);
+  const anthropicKey = core.getInput("anthropic-api-key");
+  const otherKey = core.getInput("ai-api-key");
+  for (const key of [anthropicKey, otherKey]) if (key) core.setSecret(key);
   const choice = core.getInput("ai-provider") || "auto";
   const model = core.getInput("model") || undefined;
+  const baseUrl = core.getInput("ai-url") || undefined;
 
-  if (choice === "none") return null;
-  if (choice === "auto") return apiKey ? { provider: "anthropic", apiKey, model } : null;
-  if (choice === "anthropic") {
-    if (!apiKey) throw new Error("ai-provider is anthropic but anthropic-api-key is empty.");
-    return { provider: "anthropic", apiKey, model };
+  switch (choice) {
+    case "none":
+      return null;
+    case "auto":
+      return anthropicKey ? { provider: "anthropic", apiKey: anthropicKey, model } : null;
+    case "anthropic":
+      if (!anthropicKey) throw new Error("ai-provider is anthropic but anthropic-api-key is empty.");
+      return { provider: "anthropic", apiKey: anthropicKey, model };
+    case "ollama":
+      return { provider: "ollama", model, baseUrl };
+    case "openai-compatible":
+      return { provider: "openai-compatible", apiKey: otherKey || undefined, model, baseUrl };
+    default:
+      throw new Error(`ai-provider must be auto, none, ollama, openai-compatible or anthropic, not "${choice}".`);
   }
-  if (choice === "github-models") {
-    // GitHub Models accepts the workflow token when the job has `models: read`.
-    return { provider: "github-models", apiKey: core.getInput("github-token", { required: true }), model };
-  }
-  throw new Error(`ai-provider must be auto, none, anthropic or github-models, not "${choice}".`);
 }
 
 async function postInline(

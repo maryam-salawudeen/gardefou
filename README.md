@@ -71,11 +71,13 @@ The rules find most problems on their own. The AI review is an optional second p
 
 | | Cost | Where the diff goes | Best for |
 |---|---|---|---|
-| **GitHub Models** | Free, within GitHub's daily limits (around 50 to 150 requests a day, depending on the model) | GitHub's model service | Pull requests in GitHub Actions |
-| **Ollama** | Free | Nowhere. The model runs on your machine | The command line, and code you can't send anywhere |
+| **Ollama** | Free | Nowhere. An open model runs on the GitHub runner or your own computer | Most teams, and any code you can't send to a third party |
+| **Another OpenAI-compatible server** | Depends on the server | That server | LM Studio or vLLM on your own hardware, or a hosted provider you already use |
 | **Claude** | Paid, with your Anthropic API key | Anthropic | Large pull requests and the most thorough review |
 
-GitHub Models' free tier only takes a few thousand tokens per request, so Gardefou sends it a trimmed prompt: the files with findings first, and only the sections those findings cite. On a large pull request, part of the diff is left out and the summary says so. If the daily limit runs out, the rules still run and the summary says the AI review will be back the next day.
+A small open model on a runner's CPU is slower and less thorough than Claude, so Gardefou sends it a trimmed prompt: the files with findings first, and only the sections those findings cite. On a large pull request, part of the diff is left out and the summary says so. If the model can't be reached or gives an unusable answer, the rule findings are still posted and the summary says why.
+
+If you use a hosted provider's free tier, read its terms first. Some free tiers use what you send to train their models, which is the kind of disclosure this tool is meant to catch.
 
 ## What a comment looks like
 
@@ -93,7 +95,7 @@ The pull request also gets one summary comment, kept up to date on each push, wi
 
 ## Use it as a GitHub Action
 
-Add `.github/workflows/gardefou.yml`:
+Add `.github/workflows/gardefou.yml`. This version includes the free AI review, running an open model with Ollama on the runner:
 
 ```yaml
 name: Privacy and AI review
@@ -104,17 +106,28 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  models: read # for the free AI review; remove it if you don't use github-models
 
 jobs:
   review:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODEL: qwen2.5-coder:3b
     steps:
       - uses: actions/checkout@v4
+
+      - name: Start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
+          ollama pull "$MODEL"
+
       - uses: maryam-salawudeen/gardefou@v0
         id: review
         with:
-          ai-provider: github-models # free; or leave this out for rules only
+          ai-provider: ollama
+          model: ${{ env.MODEL }}
+
       - uses: actions/upload-artifact@v4
         if: steps.review.outputs.pia-dir != ''
         with:
@@ -122,13 +135,19 @@ jobs:
           path: ${{ steps.review.outputs.pia-dir }}
 ```
 
+For rules only, delete the "Start Ollama" step and the `with:` block. For Claude, replace the `with:` block with `anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}`.
+
+The Ollama step adds a few minutes to each run, because the runner downloads the model and runs it on its CPU. A 3-billion-parameter model like `qwen2.5-coder:3b` is a good balance on GitHub's standard runners; larger models are more thorough but slower. The step installs Ollama with its official install script; if your policy requires pinned installs, set `OLLAMA_VERSION` before the script runs.
+
 It runs on `pull_request`, not `pull_request_target`, so code from forks never runs with your secrets. On pull requests from forks, the token is read-only and the review appears in the job summary instead of as comments.
 
 | Input | Default | |
 |---|---|---|
-| `ai-provider` | `auto` | `github-models` (free), `anthropic`, `none`, or `auto` (Claude if a key is set, otherwise rules only) |
+| `ai-provider` | `auto` | `ollama` (free), `openai-compatible`, `anthropic`, `none`, or `auto` (Claude if a key is set, otherwise rules only) |
+| `model` | `qwen2.5-coder:7b` for Ollama, `claude-opus-5-5` for Claude | Required for `openai-compatible` |
+| `ai-url` | `http://localhost:11434` for Ollama | Required for `openai-compatible` |
+| `ai-api-key` | none | For an `openai-compatible` server that needs a key |
 | `anthropic-api-key` | none | For `ai-provider: anthropic` |
-| `model` | `openai/gpt-4.1` for GitHub Models, `claude-opus-5-5` for Claude | |
 | `fail-on` | from the config file | Fail the check at `high`, `medium` or `low` |
 | `config-path` | `.gardefou.yml` | |
 | `pia-dir` | `gardefou-pia` | Where PIA drafts are written |
@@ -150,7 +169,7 @@ ollama pull qwen2.5-coder:7b
 npx gardefou --base main --ai ollama
 ```
 
-Nothing leaves your computer. `--model` picks another model, and `--ai-url` points at another OpenAI-compatible server, such as LM Studio (`--ai-url http://localhost:1234/v1`). `--ai github-models` uses GitHub Models with a `GITHUB_TOKEN` that has the models scope, and `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
+Nothing leaves your computer. `--model` picks another model. `--ai openai-compatible --ai-url http://localhost:1234/v1 --model <name>` uses LM Studio or another OpenAI-compatible server (set `AI_API_KEY` if it needs a key), and `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
 
 Other options: `--pia-dir pia` writes the PIA drafts, `--format markdown` and `--format json` change the output, and `--fail-on high` makes it usable as a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
 

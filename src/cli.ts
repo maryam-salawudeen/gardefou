@@ -19,14 +19,13 @@ Options:
   --diff <file>      Read a unified diff from a file, or "-" for stdin
   --format <fmt>     text (default), markdown or json
   --ai <provider>    Have an AI model check each finding in context:
-                       ollama         a model on this machine (free; nothing leaves it)
-                       github-models  GitHub Models (free daily limit; needs GITHUB_TOKEN
-                                      with the models scope)
-                       anthropic      Claude (needs ANTHROPIC_API_KEY; costs API credits)
-  --model <id>       Model for --ai (defaults: ollama qwen2.5-coder:7b,
-                     github-models openai/gpt-4.1, anthropic claude-opus-5-5)
-  --ai-url <url>     Server for ollama, or any OpenAI-compatible server such as
-                     LM Studio (default: http://localhost:11434/v1)
+                       ollama             a model on this machine (free; nothing leaves it)
+                       openai-compatible  any OpenAI-compatible server (needs --ai-url and
+                                          --model; reads AI_API_KEY if it needs a key)
+                       anthropic          Claude (needs ANTHROPIC_API_KEY; costs API credits)
+  --model <id>       Model for --ai (defaults: ollama qwen2.5-coder:7b, anthropic claude-opus-5-5)
+  --ai-url <url>     Server for ollama (default http://localhost:11434) or openai-compatible,
+                     for example LM Studio at http://localhost:1234/v1
   --pia-dir <dir>    Write privacy impact assessment drafts here
   --fail-on <level>  Exit with code 1 at this severity or above: high, medium, low
   --config <file>    Config file (default: ${CONFIG_FILE})
@@ -93,13 +92,13 @@ function aiOptions(provider: string | undefined, model?: string, baseUrl?: strin
   if (!(AI_PROVIDERS as string[]).includes(provider)) {
     throw new Error(`--ai must be one of ${AI_PROVIDERS.join(", ")}.`);
   }
-  if (provider === "github-models" && !process.env.GITHUB_TOKEN) {
-    throw new Error("--ai github-models needs GITHUB_TOKEN set to a token with the models scope.");
+  if (provider === "openai-compatible" && (!baseUrl || !model)) {
+    throw new Error("--ai openai-compatible needs --ai-url and --model.");
   }
   return {
     provider: provider as AiProvider,
     // Anthropic reads its key from the environment itself.
-    apiKey: provider === "github-models" ? process.env.GITHUB_TOKEN : undefined,
+    apiKey: provider === "openai-compatible" ? process.env.AI_API_KEY : undefined,
     model,
     baseUrl,
   };

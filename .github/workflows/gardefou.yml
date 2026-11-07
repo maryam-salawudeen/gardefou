@@ -1,4 +1,5 @@
-# Gardefou reviews its own pull requests, using GitHub Models so it costs nothing.
+# Gardefou reviews its own pull requests. The AI review runs on an open model
+# on the runner itself, so it costs nothing and the code never leaves GitHub.
 name: Privacy and AI review
 
 on:
@@ -7,14 +8,25 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  models: read
 
 jobs:
   review:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODEL: qwen2.5-coder:3b
     steps:
       - uses: actions/checkout@v4
+
+      - name: Start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          # The installer starts a service; wait until it answers.
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
+          ollama pull "$MODEL"
+
       # The local copy, so each pull request is reviewed by the code it changes.
       - uses: ./
         with:
-          ai-provider: github-models
+          ai-provider: ollama
+          model: ${{ env.MODEL }}

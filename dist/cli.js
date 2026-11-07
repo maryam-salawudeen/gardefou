@@ -44526,13 +44526,14 @@ function luhn(value) {
 }
 
 // src/ai.ts
-var AI_PROVIDERS = ["anthropic", "github-models", "ollama"];
+var AI_PROVIDERS = ["ollama", "openai-compatible", "anthropic"];
 var PROVIDER_DEFAULTS = {
   anthropic: { model: "claude-opus-5-5", diffBudget: 12e4, compact: false },
-  // GitHub's free tier caps a request at about 8,000 input tokens, so the
-  // whole prompt has to stay near 24,000 characters.
-  "github-models": { model: "openai/gpt-4.1", baseUrl: "https://models.github.ai/inference", diffBudget: 12e3, compact: true },
-  ollama: { model: "qwen2.5-coder:7b", baseUrl: "http://localhost:11434/v1", diffBudget: 24e3, compact: true }
+  // Small local models run on a CPU in CI, so the prompt is kept short enough
+  // to process in a few minutes and to fit an 8,000-token context.
+  ollama: { model: "qwen2.5-coder:7b", baseUrl: "http://localhost:11434", diffBudget: 16e3, compact: true },
+  // No default server or model: the workflow names them.
+  "openai-compatible": { model: "", diffBudget: 16e3, compact: true }
 };
 var CORE_SECTIONS = [
   "pipeda-4.1.3",
@@ -44547,7 +44548,8 @@ var CORE_SECTIONS = [
   "owasp-llm06",
   "owasp-llm07"
 ];
-var REQUEST_TIMEOUT_MS = 18e4;
+var REQUEST_TIMEOUT_MS = 15 * 6e4;
+var OLLAMA_CONTEXT_TOKENS = 16384;
 var SEVERITIES2 = ["high", "medium", "low"];
 var Verdict = object({
   index: number2().int(),
@@ -44599,8 +44601,12 @@ severity is one of: high, medium, low. rule is one of: ${RULE_IDS.join(", ")}. G
 async function aiReview(files, findings, opts) {
   const defaults2 = PROVIDER_DEFAULTS[opts.provider];
   const model = opts.model || defaults2.model;
+  const baseUrl = opts.baseUrl || defaults2.baseUrl;
+  if (opts.provider === "openai-compatible" && (!baseUrl || !model)) {
+    throw new Error("The openai-compatible provider needs a server URL and a model name.");
+  }
   const prompt = buildPrompt(files, findings, opts.laws, defaults2, opts.redact);
-  const { output, servedBy } = opts.provider === "anthropic" ? await callAnthropic(prompt.user, model, opts.apiKey) : await callOpenAiCompatible(prompt.user, model, opts.baseUrl || defaults2.baseUrl, opts.apiKey, opts.provider);
+  const { output, servedBy } = opts.provider === "anthropic" ? await callAnthropic(prompt.user, model, opts.apiKey) : opts.provider === "ollama" ? await callOllama(prompt.user, model, baseUrl) : await callOpenAiCompatible(prompt.user, model, baseUrl, opts.apiKey, opts.provider);
   return { ...applyOutput(output, files, findings, opts.laws), redacted: prompt.redacted, model: servedBy };
 }
 function buildPrompt(files, findings, laws, defaults2, personal) {
@@ -44649,49 +44655,79 @@ async function callAnthropic(user, model, apiKey) {
   if (!response.parsed_output) throw new Error(`The model's answer couldn't be read (stop reason: ${response.stop_reason}).`);
   return { output: response.parsed_output, servedBy: response.model };
 }
-async function callOpenAiCompatible(user, model, baseUrl, token, provider) {
-  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-      ...token ? { authorization: `Bearer ${token}` } : {}
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM + JSON_SHAPE },
-        { role: "user", content: user }
-      ],
-      response_format: { type: "json_object" }
-    }),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+async function callOllama(user, model, baseUrl) {
+  const root = baseUrl.replace(/\/$/, "").replace(/\/v1$/, "");
+  const body = await post("ollama", `${root}/api/chat`, void 0, {
+    model,
+    stream: false,
+    format: "json",
+    options: { num_ctx: OLLAMA_CONTEXT_TOKENS },
+    messages: [
+      { role: "system", content: SYSTEM + JSON_SHAPE },
+      { role: "user", content: user }
+    ]
   });
-  if (!res.ok) throw new Error(providerError(provider, res.status, await res.text().catch(() => "")));
-  const body = await res.text();
-  let data;
-  try {
-    data = JSON.parse(body);
-  } catch {
-    throw new Error(
-      `${provider} sent back something that isn't an API response ("${body.slice(0, 40).trim()}"). A proxy or firewall may be intercepting requests to ${new URL(baseUrl).host}.`
-    );
-  }
+  const data = parseJson(body, "ollama", root);
+  const text = data.message?.content;
+  if (!text) throw new Error("ollama returned no answer.");
+  return { output: parseLenient(text), servedBy: data.model || model };
+}
+async function callOpenAiCompatible(user, model, baseUrl, token, provider) {
+  const root = baseUrl.replace(/\/$/, "");
+  const body = await post(provider, `${root}/chat/completions`, token, {
+    model,
+    messages: [
+      { role: "system", content: SYSTEM + JSON_SHAPE },
+      { role: "user", content: user }
+    ],
+    response_format: { type: "json_object" }
+  });
+  const data = parseJson(body, provider, root);
   const text = data.choices?.[0]?.message?.content;
   if (!text) throw new Error(`${provider} returned no answer.`);
   return { output: parseLenient(text), servedBy: data.model || model };
 }
+async function post(provider, url, token, payload) {
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        ...token ? { authorization: `Bearer ${token}` } : {}
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      throw new Error(`${provider} took longer than ${REQUEST_TIMEOUT_MS / 6e4} minutes. Try a smaller model.`);
+    }
+    throw new Error(
+      provider === "ollama" ? `Couldn't reach Ollama at ${new URL(url).host}. Start it with \`ollama serve\`, and pull the model first.` : `Couldn't reach ${new URL(url).host}.`
+    );
+  }
+  const body = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(providerError(provider, res.status, body));
+  return body;
+}
+function parseJson(body, provider, baseUrl) {
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error(
+      `${provider} sent back something that isn't an API response ("${body.slice(0, 40).trim()}"). The service at ${new URL(baseUrl).host} may have moved or been retired, or a proxy may be answering in its place.`
+    );
+  }
+}
 function providerError(provider, status, body) {
   const detail = body.slice(0, 200).replace(/\s+/g, " ");
-  if (provider === "github-models" && (status === 401 || status === 403)) {
-    return `GitHub Models refused the request (${status}). Add \`models: read\` under \`permissions:\` in the workflow. If it still fails, GitHub Models may not be enabled for your account or organization.`;
+  if (provider === "ollama" && status === 404) {
+    return `Ollama doesn't have that model. Run \`ollama pull <model>\` first.${detail ? ` (${detail})` : ""}`;
   }
-  if (provider === "github-models" && status === 429) {
-    return "GitHub Models' free daily limit is used up. The rules still ran; the AI review will run again when the limit resets.";
-  }
-  if (provider === "github-models" && status === 413) {
-    return "The diff is too large for GitHub Models' free tier, even trimmed. The rules still ran.";
-  }
+  if (status === 401 || status === 403) return `${provider} refused the request (${status}). Check the API key.`;
+  if (status === 429) return `${provider} is rate limiting requests or its free quota is used up. The rules still ran.`;
   return `${provider} returned ${status}${detail ? `: ${detail}` : ""}`;
 }
 function parseLenient(text) {
@@ -45783,14 +45819,13 @@ Options:
   --diff <file>      Read a unified diff from a file, or "-" for stdin
   --format <fmt>     text (default), markdown or json
   --ai <provider>    Have an AI model check each finding in context:
-                       ollama         a model on this machine (free; nothing leaves it)
-                       github-models  GitHub Models (free daily limit; needs GITHUB_TOKEN
-                                      with the models scope)
-                       anthropic      Claude (needs ANTHROPIC_API_KEY; costs API credits)
-  --model <id>       Model for --ai (defaults: ollama qwen2.5-coder:7b,
-                     github-models openai/gpt-4.1, anthropic claude-opus-5-5)
-  --ai-url <url>     Server for ollama, or any OpenAI-compatible server such as
-                     LM Studio (default: http://localhost:11434/v1)
+                       ollama             a model on this machine (free; nothing leaves it)
+                       openai-compatible  any OpenAI-compatible server (needs --ai-url and
+                                          --model; reads AI_API_KEY if it needs a key)
+                       anthropic          Claude (needs ANTHROPIC_API_KEY; costs API credits)
+  --model <id>       Model for --ai (defaults: ollama qwen2.5-coder:7b, anthropic claude-opus-5-5)
+  --ai-url <url>     Server for ollama (default http://localhost:11434) or openai-compatible,
+                     for example LM Studio at http://localhost:1234/v1
   --pia-dir <dir>    Write privacy impact assessment drafts here
   --fail-on <level>  Exit with code 1 at this severity or above: high, medium, low
   --config <file>    Config file (default: ${CONFIG_FILE})
@@ -45845,13 +45880,13 @@ function aiOptions(provider, model, baseUrl) {
   if (!AI_PROVIDERS.includes(provider)) {
     throw new Error(`--ai must be one of ${AI_PROVIDERS.join(", ")}.`);
   }
-  if (provider === "github-models" && !process.env.GITHUB_TOKEN) {
-    throw new Error("--ai github-models needs GITHUB_TOKEN set to a token with the models scope.");
+  if (provider === "openai-compatible" && (!baseUrl || !model)) {
+    throw new Error("--ai openai-compatible needs --ai-url and --model.");
   }
   return {
     provider,
     // Anthropic reads its key from the environment itself.
-    apiKey: provider === "github-models" ? process.env.GITHUB_TOKEN : void 0,
+    apiKey: provider === "openai-compatible" ? process.env.AI_API_KEY : void 0,
     model,
     baseUrl
   };

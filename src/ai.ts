@@ -7,13 +7,14 @@ import { RULE_IDS, type DiffFile, type Finding, type Law, type RuleId } from "./
 
 /**
  * Where the AI review runs.
+ * - ollama: an open model on the machine running the review, your computer or
+ *   the GitHub runner. Free, and the code never leaves that machine.
+ * - openai-compatible: any server that speaks the OpenAI chat completions
+ *   format, such as LM Studio, vLLM or a hosted provider's free tier.
  * - anthropic: Claude, with your API key. Paid, largest context.
- * - github-models: GitHub Models, with the workflow's own token. Free within
- *   GitHub's daily limits, but each request is capped at a few thousand tokens.
- * - ollama: a model running on your own machine. Free, and nothing leaves it.
  */
-export type AiProvider = "anthropic" | "github-models" | "ollama";
-export const AI_PROVIDERS: AiProvider[] = ["anthropic", "github-models", "ollama"];
+export type AiProvider = "ollama" | "openai-compatible" | "anthropic";
+export const AI_PROVIDERS: AiProvider[] = ["ollama", "openai-compatible", "anthropic"];
 
 interface ProviderDefaults {
   model: string;
@@ -26,10 +27,11 @@ interface ProviderDefaults {
 
 export const PROVIDER_DEFAULTS: Record<AiProvider, ProviderDefaults> = {
   anthropic: { model: "claude-opus-5-5", diffBudget: 120_000, compact: false },
-  // GitHub's free tier caps a request at about 8,000 input tokens, so the
-  // whole prompt has to stay near 24,000 characters.
-  "github-models": { model: "openai/gpt-4.1", baseUrl: "https://models.github.ai/inference", diffBudget: 12_000, compact: true },
-  ollama: { model: "qwen2.5-coder:7b", baseUrl: "http://localhost:11434/v1", diffBudget: 24_000, compact: true },
+  // Small local models run on a CPU in CI, so the prompt is kept short enough
+  // to process in a few minutes and to fit an 8,000-token context.
+  ollama: { model: "qwen2.5-coder:7b", baseUrl: "http://localhost:11434", diffBudget: 16_000, compact: true },
+  // No default server or model: the workflow names them.
+  "openai-compatible": { model: "", diffBudget: 16_000, compact: true },
 };
 
 // The model gets a short list of sections it may cite for new findings, even
@@ -39,7 +41,12 @@ const CORE_SECTIONS: SectionId[] = [
   "owasp-llm01", "owasp-llm02", "owasp-llm05", "owasp-llm06", "owasp-llm07",
 ];
 
-const REQUEST_TIMEOUT_MS = 180_000;
+// A local model on a CI runner's CPU can take several minutes.
+const REQUEST_TIMEOUT_MS = 15 * 60_000;
+
+// Ollama's default context is a few thousand tokens and it cuts longer prompts
+// without saying so. This fits the compact prompt plus the answer.
+const OLLAMA_CONTEXT_TOKENS = 16_384;
 
 const SEVERITIES = ["high", "medium", "low"] as const;
 
@@ -97,7 +104,7 @@ severity is one of: high, medium, low. rule is one of: ${RULE_IDS.join(", ")}. G
 
 export interface AiOptions {
   provider: AiProvider;
-  /** Anthropic API key, or the GitHub token for GitHub Models. Ollama needs none. */
+  /** Anthropic API key, or the key for an OpenAI-compatible server. Ollama needs none. */
   apiKey?: string;
   model?: string;
   baseUrl?: string;
@@ -118,12 +125,18 @@ export interface AiResult {
 export async function aiReview(files: DiffFile[], findings: Finding[], opts: AiOptions): Promise<AiResult> {
   const defaults = PROVIDER_DEFAULTS[opts.provider];
   const model = opts.model || defaults.model;
+  const baseUrl = opts.baseUrl || defaults.baseUrl;
+  if (opts.provider === "openai-compatible" && (!baseUrl || !model)) {
+    throw new Error("The openai-compatible provider needs a server URL and a model name.");
+  }
   const prompt = buildPrompt(files, findings, opts.laws, defaults, opts.redact);
 
   const { output, servedBy } =
     opts.provider === "anthropic"
       ? await callAnthropic(prompt.user, model, opts.apiKey)
-      : await callOpenAiCompatible(prompt.user, model, opts.baseUrl || defaults.baseUrl!, opts.apiKey, opts.provider);
+      : opts.provider === "ollama"
+        ? await callOllama(prompt.user, model, baseUrl!)
+        : await callOpenAiCompatible(prompt.user, model, baseUrl!, opts.apiKey, opts.provider);
 
   return { ...applyOutput(output, files, findings, opts.laws), redacted: prompt.redacted, model: servedBy };
 }
@@ -188,7 +201,27 @@ async function callAnthropic(user: string, model: string, apiKey?: string): Prom
   return { output: response.parsed_output, servedBy: response.model };
 }
 
-/** GitHub Models and Ollama both serve the OpenAI chat completions format. */
+/** Ollama's own chat API, which lets the request set the context size. */
+async function callOllama(user: string, model: string, baseUrl: string): Promise<{ output: Output; servedBy: string }> {
+  // Accept the OpenAI-style address people often copy (".../v1") as well.
+  const root = baseUrl.replace(/\/$/, "").replace(/\/v1$/, "");
+  const body = await post("ollama", `${root}/api/chat`, undefined, {
+    model,
+    stream: false,
+    format: "json",
+    options: { num_ctx: OLLAMA_CONTEXT_TOKENS },
+    messages: [
+      { role: "system", content: SYSTEM + JSON_SHAPE },
+      { role: "user", content: user },
+    ],
+  });
+  const data = parseJson<{ model?: string; message?: { content?: string } }>(body, "ollama", root);
+  const text = data.message?.content;
+  if (!text) throw new Error("ollama returned no answer.");
+  return { output: parseLenient(text), servedBy: data.model || model };
+}
+
+/** LM Studio, vLLM and many hosted providers serve the OpenAI chat completions format. */
 async function callOpenAiCompatible(
   user: string,
   model: string,
@@ -196,51 +229,67 @@ async function callOpenAiCompatible(
   token: string | undefined,
   provider: AiProvider,
 ): Promise<{ output: Output; servedBy: string }> {
-  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM + JSON_SHAPE },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
-    }),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  const root = baseUrl.replace(/\/$/, "");
+  const body = await post(provider, `${root}/chat/completions`, token, {
+    model,
+    messages: [
+      { role: "system", content: SYSTEM + JSON_SHAPE },
+      { role: "user", content: user },
+    ],
+    response_format: { type: "json_object" },
   });
-
-  if (!res.ok) throw new Error(providerError(provider, res.status, await res.text().catch(() => "")));
-  const body = await res.text();
-  let data: { model?: string; choices?: { message?: { content?: string } }[] };
-  try {
-    data = JSON.parse(body);
-  } catch {
-    // A proxy or firewall in front of the network can answer in the provider's place.
-    throw new Error(
-      `${provider} sent back something that isn't an API response ("${body.slice(0, 40).trim()}"). A proxy or firewall may be intercepting requests to ${new URL(baseUrl).host}.`,
-    );
-  }
+  const data = parseJson<{ model?: string; choices?: { message?: { content?: string } }[] }>(body, provider, root);
   const text = data.choices?.[0]?.message?.content;
   if (!text) throw new Error(`${provider} returned no answer.`);
   return { output: parseLenient(text), servedBy: data.model || model };
 }
 
+async function post(provider: AiProvider, url: string, token: string | undefined, payload: unknown): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      throw new Error(`${provider} took longer than ${REQUEST_TIMEOUT_MS / 60_000} minutes. Try a smaller model.`);
+    }
+    throw new Error(
+      provider === "ollama"
+        ? `Couldn't reach Ollama at ${new URL(url).host}. Start it with \`ollama serve\`, and pull the model first.`
+        : `Couldn't reach ${new URL(url).host}.`,
+    );
+  }
+  const body = await res.text().catch(() => "");
+  if (!res.ok) throw new Error(providerError(provider, res.status, body));
+  return body;
+}
+
+function parseJson<T>(body: string, provider: AiProvider, baseUrl: string): T {
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    // A retired service or a proxy can answer 200 with something else entirely.
+    throw new Error(
+      `${provider} sent back something that isn't an API response ("${body.slice(0, 40).trim()}"). The service at ${new URL(baseUrl).host} may have moved or been retired, or a proxy may be answering in its place.`,
+    );
+  }
+}
+
 function providerError(provider: AiProvider, status: number, body: string): string {
   const detail = body.slice(0, 200).replace(/\s+/g, " ");
-  if (provider === "github-models" && (status === 401 || status === 403)) {
-    return `GitHub Models refused the request (${status}). Add \`models: read\` under \`permissions:\` in the workflow. If it still fails, GitHub Models may not be enabled for your account or organization.`;
+  if (provider === "ollama" && status === 404) {
+    return `Ollama doesn't have that model. Run \`ollama pull <model>\` first.${detail ? ` (${detail})` : ""}`;
   }
-  if (provider === "github-models" && status === 429) {
-    return "GitHub Models' free daily limit is used up. The rules still ran; the AI review will run again when the limit resets.";
-  }
-  if (provider === "github-models" && status === 413) {
-    return "The diff is too large for GitHub Models' free tier, even trimmed. The rules still ran.";
-  }
+  if (status === 401 || status === 403) return `${provider} refused the request (${status}). Check the API key.`;
+  if (status === 429) return `${provider} is rate limiting requests or its free quota is used up. The rules still ran.`;
   return `${provider} returned ${status}${detail ? `: ${detail}` : ""}`;
 }
 

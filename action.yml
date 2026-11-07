@@ -12,14 +12,21 @@ inputs:
   ai-provider:
     description: >-
       Which AI checks each rule finding in context and looks for ones the rules missed.
-      auto (Claude if anthropic-api-key is set, otherwise rules only), none, anthropic,
-      or github-models (free within GitHub's daily limits; the job needs `models: read` permission).
+      auto (Claude if anthropic-api-key is set, otherwise rules only), none,
+      ollama (free; an Ollama server on the runner, see the README),
+      openai-compatible (any OpenAI-compatible server, with ai-url and model), or anthropic.
     default: auto
   anthropic-api-key:
-    description: Optional. Anthropic API key for the anthropic provider.
+    description: Anthropic API key, for the anthropic provider.
+    required: false
+  ai-url:
+    description: Server URL for ollama (default http://localhost:11434) or openai-compatible.
+    required: false
+  ai-api-key:
+    description: API key for an openai-compatible server, if it needs one.
     required: false
   model:
-    description: Model for the AI review. Defaults to claude-opus-5-5 for anthropic and openai/gpt-4.1 for github-models.
+    description: Model for the AI review. Defaults to qwen2.5-coder:7b for ollama and claude-opus-5-5 for anthropic; required for openai-compatible.
     required: false
   config-path:
     description: Path to the config file.
