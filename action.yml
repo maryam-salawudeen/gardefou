@@ -1,0 +1,38 @@
+name: Gardefou
+description: Reviews pull requests for personal information under Canadian privacy law and for unsafe use of AI, and drafts the privacy impact assessment when data goes to a new vendor.
+author: Maryam Salawudeen
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  github-token:
+    description: Token used to read the diff and post comments.
+    default: ${{ github.token }}
+  anthropic-api-key:
+    description: Optional. With a key, Claude checks each rule finding in context and looks for ones the rules missed. Without one, the review runs on rules alone.
+    required: false
+  model:
+    description: Claude model for the AI pass.
+    default: claude-opus-5-5
+  config-path:
+    description: Path to the config file.
+    default: .gardefou.yml
+  fail-on:
+    description: Fail the check when a finding at this severity or above remains (high, medium, low or none). Overrides fail_on in the config file.
+    required: false
+  pia-dir:
+    description: Folder where privacy impact assessment drafts are written, for upload as an artifact.
+    default: gardefou-pia
+
+outputs:
+  findings:
+    description: Number of findings.
+  high:
+    description: Number of high-severity findings.
+  pia-dir:
+    description: Folder holding PIA drafts, or empty when none were written.
+
+runs:
+  using: node20
+  main: dist/action.js

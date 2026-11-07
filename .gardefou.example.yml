@@ -1,0 +1,45 @@
+# Copy to .gardefou.yml in your repository root. Every key is optional.
+
+jurisdictions:
+  # Where the people whose information you handle live: "all", or a list of
+  # AB, BC, MB, NB, NL, NS, NT, NU, ON, PE, QC, SK, YT. PIPEDA is always included.
+  provinces: all
+  # true if you're a health information custodian (a clinic, pharmacy or
+  # practitioner) or build software for one. Adds the provincial health acts.
+  health: false
+
+vendors:
+  # Vendors you've already assessed. They won't be raised again.
+  approved:
+    - id: stripe
+      pia: docs/privacy/pia-stripe.md
+    - id: sentry
+
+# Your company's AI boundary.
+ai:
+  # The AI providers you've approved, by vendor id (anthropic, openai,
+  # google-gemini, mistral, cohere). Any other AI provider is a high-severity
+  # finding. Leave empty to treat AI providers like any other new vendor.
+  approved_providers: [anthropic]
+  # Flag AI clients configured for a region outside Canada.
+  require_canadian_region: false
+  # Remove secrets and personal values from the diff before the AI review sees
+  # it. Secrets are always removed; this also removes emails, SINs, phone and
+  # card numbers.
+  redact: true
+
+ignore:
+  # Added to the defaults (Markdown, lock files, dist, node_modules, minified files).
+  paths:
+    - "**/*.test.ts"
+    - "fixtures/**"
+  # Any of: new-recipient, personal-info-field, personal-info-leak,
+  # over-collection, ai-secret, ai-provider, ai-retention, prompt-injection,
+  # ai-output, ai-agency, automated-decision
+  rules: []
+
+# Fail the check when a finding at this severity or above remains: high, medium, low or none.
+fail_on: none
+
+# Most inline comments to post on one pull request. The summary lists every finding.
+max_comments: 25

@@ -1,0 +1,6 @@
+node_modules/
+gardefou-pia/
+.env
+.env.*
+*.log
+.DS_Store

@@ -1,0 +1,55 @@
+{
+  "name": "gardefou",
+  "version": "0.1.0",
+  "description": "Reviews pull requests for personal information under Canadian privacy law (PIPEDA, Law 25, Alberta and BC PIPA, provincial health acts) and for unsafe use of AI: leaked keys, prompt injection, unsafe model output and over-powered agents.",
+  "type": "module",
+  "bin": {
+    "gardefou": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "data"
+  ],
+  "scripts": {
+    "build": "node scripts/bundle.mjs",
+    "review": "node --import tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "skill": "node --import tsx scripts/build-skill.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "@anthropic-ai/sdk": "^1.6.0",
+    "picomatch": "^4.0.2",
+    "tldts": "^7.4.19",
+    "yaml": "^2.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/picomatch": "^3.0.1",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "privacy",
+    "pipeda",
+    "law-25",
+    "pipa",
+    "phipa",
+    "ai-security",
+    "llm-security",
+    "prompt-injection",
+    "mcp",
+    "github-action",
+    "code-review",
+    "canada"
+  ]
+}

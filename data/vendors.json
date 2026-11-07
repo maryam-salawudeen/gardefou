@@ -1,0 +1,1630 @@
+{
+  "about": "Known third parties and where the company that runs them is headquartered. Headquarters is only a starting point: the processing location and the contracting entity for Canadian customers must be confirmed in the vendor's data processing agreement (DPA). See CONTRIBUTING.md before adding or changing an entry.",
+  "vendors": [
+    {
+      "id": "google-analytics",
+      "name": "Google Analytics",
+      "operator": "Google LLC",
+      "website": "https://marketingplatform.google.com/about/analytics/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "analytics",
+      "domains": [
+        "google-analytics.com",
+        "analytics.google.com"
+      ],
+      "cookies": [
+        "_ga",
+        "_ga_*",
+        "_gid",
+        "_gat*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-tag-manager",
+      "name": "Google Tag Manager",
+      "operator": "Google LLC",
+      "website": "https://tagmanager.google.com/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "tag-manager",
+      "domains": [
+        "googletagmanager.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-ads",
+      "name": "Google Ads and DoubleClick",
+      "operator": "Google LLC",
+      "website": "https://ads.google.com/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "advertising",
+      "domains": [
+        "doubleclick.net",
+        "googleadservices.com",
+        "googlesyndication.com",
+        "google.com/pagead",
+        "google.com/ads",
+        "google.ca/pagead",
+        "adservice.google.com",
+        "2mdn.net",
+        "adtrafficquality.google"
+      ],
+      "cookies": [
+        "_gcl_*",
+        "IDE",
+        "test_cookie"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-fonts",
+      "name": "Google Fonts",
+      "operator": "Google LLC",
+      "website": "https://fonts.google.com/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "fonts",
+      "domains": [
+        "fonts.googleapis.com",
+        "fonts.gstatic.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-recaptcha",
+      "name": "Google reCAPTCHA",
+      "operator": "Google LLC",
+      "website": "https://www.google.com/recaptcha/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "captcha",
+      "domains": [
+        "google.com/recaptcha",
+        "gstatic.com/recaptcha",
+        "recaptcha.net"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-maps",
+      "name": "Google Maps",
+      "operator": "Google LLC",
+      "website": "https://mapsplatform.google.com/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "maps",
+      "domains": [
+        "maps.googleapis.com",
+        "maps.gstatic.com",
+        "google.com/maps"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "operator": "Google LLC",
+      "website": "https://www.youtube.com/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "video",
+      "domains": [
+        "youtube.com",
+        "youtube-nocookie.com",
+        "ytimg.com",
+        "googlevideo.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "google-other",
+      "name": "Google (other services)",
+      "operator": "Google LLC",
+      "website": "https://about.google/",
+      "privacyUrl": "https://policies.google.com/privacy",
+      "category": "cdn",
+      "domains": [
+        "googleapis.com",
+        "gstatic.com",
+        "google.com",
+        "google.ca",
+        "googleusercontent.com"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "note": "A Google domain that this tool could not tie to one product. Check the requests to see which service it is."
+    },
+    {
+      "id": "meta-pixel",
+      "name": "Meta Pixel and Facebook",
+      "operator": "Meta Platforms, Inc.",
+      "website": "https://www.facebook.com/business/tools/meta-pixel",
+      "privacyUrl": "https://www.facebook.com/privacy/policy/",
+      "category": "advertising",
+      "domains": [
+        "facebook.net",
+        "facebook.com",
+        "fbcdn.net",
+        "instagram.com",
+        "cdninstagram.com"
+      ],
+      "cookies": [
+        "_fbp",
+        "_fbc"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "microsoft-ads",
+      "name": "Microsoft Advertising (UET)",
+      "operator": "Microsoft Corporation",
+      "website": "https://ads.microsoft.com/",
+      "privacyUrl": "https://privacy.microsoft.com/",
+      "category": "advertising",
+      "domains": [
+        "bat.bing.com",
+        "bat.bing.net"
+      ],
+      "cookies": [
+        "_uetsid",
+        "_uetvid",
+        "MUID"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "microsoft-clarity",
+      "name": "Microsoft Clarity",
+      "operator": "Microsoft Corporation",
+      "website": "https://clarity.microsoft.com/",
+      "privacyUrl": "https://privacy.microsoft.com/",
+      "category": "session-replay",
+      "domains": [
+        "clarity.ms"
+      ],
+      "cookies": [
+        "_clck",
+        "_clsk",
+        "CLID"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "microsoft-other",
+      "name": "Microsoft (Bing, Azure and other services)",
+      "operator": "Microsoft Corporation",
+      "website": "https://www.microsoft.com/",
+      "privacyUrl": "https://privacy.microsoft.com/",
+      "category": "cdn",
+      "domains": [
+        "bing.com",
+        "azureedge.net",
+        "azurefd.net",
+        "windows.net",
+        "msecnd.net",
+        "microsoft.com",
+        "office.com",
+        "office.net"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn Insight Tag",
+      "operator": "LinkedIn Corporation",
+      "website": "https://business.linkedin.com/marketing-solutions/insight-tag",
+      "privacyUrl": "https://www.linkedin.com/legal/privacy-policy",
+      "category": "advertising",
+      "domains": [
+        "licdn.com",
+        "linkedin.com"
+      ],
+      "cookies": [
+        "li_fat_id",
+        "lidc",
+        "bcookie",
+        "li_gc",
+        "UserMatchHistory",
+        "AnalyticsSyncHistory"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok Pixel",
+      "operator": "TikTok (the contracting entity depends on the region)",
+      "website": "https://ads.tiktok.com/",
+      "category": "advertising",
+      "domains": [
+        "analytics.tiktok.com",
+        "tiktok.com",
+        "tiktokcdn.com",
+        "byteoversea.com"
+      ],
+      "cookies": [
+        "_ttp",
+        "_tt_enable_cookie"
+      ],
+      "hq": null,
+      "note": "TikTok's contracting entity differs by region. Check which entity your TikTok for Business terms name."
+    },
+    {
+      "id": "pinterest",
+      "name": "Pinterest Tag",
+      "operator": "Pinterest, Inc.",
+      "website": "https://business.pinterest.com/",
+      "category": "advertising",
+      "domains": [
+        "pinterest.com",
+        "pinimg.com"
+      ],
+      "cookies": [
+        "_pin_unauth",
+        "_pinterest_ct_ua",
+        "_epik"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "snap",
+      "name": "Snap Pixel",
+      "operator": "Snap Inc.",
+      "website": "https://forbusiness.snapchat.com/",
+      "category": "advertising",
+      "domains": [
+        "sc-static.net",
+        "snapchat.com"
+      ],
+      "cookies": [
+        "_scid",
+        "_scid_r",
+        "_sctr"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "x-ads",
+      "name": "X (Twitter) Pixel",
+      "operator": "X Corp.",
+      "website": "https://business.x.com/",
+      "category": "advertising",
+      "domains": [
+        "ads-twitter.com",
+        "analytics.twitter.com",
+        "twitter.com",
+        "x.com",
+        "t.co",
+        "twimg.com"
+      ],
+      "cookies": [
+        "_twclid",
+        "muc_ads"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit Pixel",
+      "operator": "Reddit, Inc.",
+      "website": "https://ads.reddit.com/",
+      "category": "advertising",
+      "domains": [
+        "redditstatic.com",
+        "reddit.com",
+        "redditmedia.com"
+      ],
+      "cookies": [
+        "_rdt_uuid",
+        "_rdt_em"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "amazon-ads",
+      "name": "Amazon Ads",
+      "operator": "Amazon.com, Inc.",
+      "website": "https://advertising.amazon.com/",
+      "category": "advertising",
+      "domains": [
+        "amazon-adsystem.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "the-trade-desk",
+      "name": "The Trade Desk",
+      "operator": "The Trade Desk, Inc.",
+      "website": "https://www.thetradedesk.com/",
+      "category": "advertising",
+      "domains": [
+        "adsrvr.org"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "criteo",
+      "name": "Criteo",
+      "operator": "Criteo SA",
+      "website": "https://www.criteo.com/",
+      "category": "advertising",
+      "domains": [
+        "criteo.com",
+        "criteo.net"
+      ],
+      "hq": {
+        "country": "FR"
+      }
+    },
+    {
+      "id": "taboola",
+      "name": "Taboola",
+      "operator": "Taboola.com Ltd.",
+      "website": "https://www.taboola.com/",
+      "category": "advertising",
+      "domains": [
+        "taboola.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "outbrain",
+      "name": "Outbrain",
+      "operator": "Outbrain Inc.",
+      "website": "https://www.outbrain.com/",
+      "category": "advertising",
+      "domains": [
+        "outbrain.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "quantcast",
+      "name": "Quantcast",
+      "operator": "Quantcast Corporation",
+      "website": "https://www.quantcast.com/",
+      "category": "advertising",
+      "domains": [
+        "quantserve.com",
+        "quantcount.com",
+        "quantcast.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "index-exchange",
+      "name": "Index Exchange",
+      "operator": "Index Exchange Inc.",
+      "website": "https://www.indexexchange.com/",
+      "category": "advertising",
+      "domains": [
+        "casalemedia.com",
+        "indexww.com"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "ON"
+      }
+    },
+    {
+      "id": "magnite",
+      "name": "Magnite (Rubicon Project)",
+      "operator": "Magnite, Inc.",
+      "website": "https://www.magnite.com/",
+      "category": "advertising",
+      "domains": [
+        "rubiconproject.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "comscore",
+      "name": "Comscore",
+      "operator": "comScore, Inc.",
+      "website": "https://www.comscore.com/",
+      "category": "analytics",
+      "domains": [
+        "scorecardresearch.com"
+      ],
+      "cookies": [
+        "UID",
+        "UIDR"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "braze",
+      "name": "Braze",
+      "operator": "Braze, Inc.",
+      "website": "https://www.braze.com/",
+      "category": "marketing-automation",
+      "domains": [
+        "braze.com",
+        "braze.eu",
+        "appboycdn.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "yahoo-ads",
+      "name": "Yahoo Advertising",
+      "operator": "Yahoo Inc.",
+      "website": "https://www.advertising.yahoo.com/",
+      "category": "advertising",
+      "domains": [
+        "analytics.yahoo.com",
+        "ads.yahoo.com",
+        "yahoo.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "hotjar",
+      "name": "Hotjar",
+      "operator": "Hotjar Ltd",
+      "website": "https://www.hotjar.com/",
+      "privacyUrl": "https://www.hotjar.com/legal/policies/privacy/",
+      "category": "session-replay",
+      "domains": [
+        "hotjar.com",
+        "hotjar.io"
+      ],
+      "cookies": [
+        "_hj*"
+      ],
+      "hq": {
+        "country": "MT"
+      }
+    },
+    {
+      "id": "contentsquare",
+      "name": "Contentsquare",
+      "operator": "Contentsquare SAS",
+      "website": "https://contentsquare.com/",
+      "category": "session-replay",
+      "domains": [
+        "contentsquare.net",
+        "contentsquare.com"
+      ],
+      "cookies": [
+        "_cs_*"
+      ],
+      "hq": {
+        "country": "FR"
+      }
+    },
+    {
+      "id": "fullstory",
+      "name": "FullStory",
+      "operator": "FullStory, Inc.",
+      "website": "https://www.fullstory.com/",
+      "category": "session-replay",
+      "domains": [
+        "fullstory.com"
+      ],
+      "cookies": [
+        "fs_uid",
+        "fs_lua"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "logrocket",
+      "name": "LogRocket",
+      "operator": "LogRocket, Inc.",
+      "website": "https://logrocket.com/",
+      "category": "session-replay",
+      "domains": [
+        "logrocket.com",
+        "logrocket.io",
+        "lr-ingest.io",
+        "lr-ingest.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "mixpanel",
+      "name": "Mixpanel",
+      "operator": "Mixpanel, Inc.",
+      "website": "https://mixpanel.com/",
+      "category": "analytics",
+      "domains": [
+        "mixpanel.com",
+        "mxpnl.com"
+      ],
+      "cookies": [
+        "mp_*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "amplitude",
+      "name": "Amplitude",
+      "operator": "Amplitude, Inc.",
+      "website": "https://amplitude.com/",
+      "category": "analytics",
+      "domains": [
+        "amplitude.com"
+      ],
+      "cookies": [
+        "AMP_*",
+        "amp_*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "segment",
+      "name": "Segment",
+      "operator": "Twilio Inc.",
+      "website": "https://segment.com/",
+      "category": "analytics",
+      "domains": [
+        "segment.com",
+        "segment.io"
+      ],
+      "cookies": [
+        "ajs_*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "heap",
+      "name": "Heap",
+      "operator": "Heap Inc.",
+      "website": "https://www.heap.io/",
+      "category": "analytics",
+      "domains": [
+        "heap.io",
+        "heapanalytics.com"
+      ],
+      "cookies": [
+        "_hp2_*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "optimizely",
+      "name": "Optimizely",
+      "operator": "Optimizely, Inc.",
+      "website": "https://www.optimizely.com/",
+      "category": "experimentation",
+      "domains": [
+        "optimizely.com"
+      ],
+      "cookies": [
+        "optimizelyEndUserId"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "vwo",
+      "name": "VWO",
+      "operator": "Wingify Software Pvt. Ltd.",
+      "website": "https://vwo.com/",
+      "category": "experimentation",
+      "domains": [
+        "visualwebsiteoptimizer.com",
+        "wingify.com",
+        "vwo.com"
+      ],
+      "cookies": [
+        "_vwo_*",
+        "_vis_opt_*"
+      ],
+      "hq": {
+        "country": "IN"
+      }
+    },
+    {
+      "id": "yandex-metrica",
+      "name": "Yandex Metrica",
+      "operator": "Yandex",
+      "website": "https://metrica.yandex.com/",
+      "category": "session-replay",
+      "domains": [
+        "mc.yandex.ru",
+        "mc.yandex.com",
+        "yandex.ru"
+      ],
+      "cookies": [
+        "_ym_*"
+      ],
+      "hq": {
+        "country": "RU"
+      }
+    },
+    {
+      "id": "baidu-analytics",
+      "name": "Baidu Tongji",
+      "operator": "Baidu, Inc.",
+      "website": "https://tongji.baidu.com/",
+      "category": "analytics",
+      "domains": [
+        "hm.baidu.com",
+        "baidu.com"
+      ],
+      "cookies": [
+        "Hm_lvt_*",
+        "Hm_lpvt_*"
+      ],
+      "hq": {
+        "country": "CN"
+      }
+    },
+    {
+      "id": "plausible",
+      "name": "Plausible Analytics",
+      "operator": "Plausible Insights OÜ",
+      "website": "https://plausible.io/",
+      "category": "analytics",
+      "domains": [
+        "plausible.io"
+      ],
+      "hq": {
+        "country": "EE"
+      },
+      "profiling": false,
+      "note": "Plausible says it uses no cookies and no persistent identifiers. Each request still sends the visitor's IP address and browser details."
+    },
+    {
+      "id": "simple-analytics",
+      "name": "Simple Analytics",
+      "operator": "Simple Analytics B.V.",
+      "website": "https://www.simpleanalytics.com/",
+      "category": "analytics",
+      "domains": [
+        "simpleanalytics.com",
+        "simpleanalyticscdn.com"
+      ],
+      "hq": {
+        "country": "NL"
+      },
+      "profiling": false,
+      "note": "Simple Analytics says it uses no cookies and no persistent identifiers. Each request still sends the visitor's IP address and browser details."
+    },
+    {
+      "id": "fathom",
+      "name": "Fathom Analytics",
+      "operator": "Conva Ventures Inc.",
+      "website": "https://usefathom.com/",
+      "category": "analytics",
+      "domains": [
+        "usefathom.com"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "BC"
+      },
+      "profiling": false,
+      "note": "Fathom says it uses no cookies and no persistent identifiers. Each request still sends the visitor's IP address and browser details."
+    },
+    {
+      "id": "matomo-cloud",
+      "name": "Matomo Cloud",
+      "operator": "InnoCraft Ltd",
+      "website": "https://matomo.org/",
+      "category": "analytics",
+      "domains": [
+        "matomo.cloud"
+      ],
+      "cookies": [
+        "_pk_*"
+      ],
+      "hq": {
+        "country": "NZ"
+      },
+      "note": "Self-hosted Matomo on your own domain shows up as first party and is not listed here."
+    },
+    {
+      "id": "cloudflare-web-analytics",
+      "name": "Cloudflare Web Analytics",
+      "operator": "Cloudflare, Inc.",
+      "website": "https://www.cloudflare.com/web-analytics/",
+      "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
+      "category": "analytics",
+      "domains": [
+        "cloudflareinsights.com"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "profiling": false
+    },
+    {
+      "id": "vercel-analytics",
+      "name": "Vercel Web Analytics",
+      "operator": "Vercel Inc.",
+      "website": "https://vercel.com/analytics",
+      "category": "analytics",
+      "domains": [
+        "vercel-insights.com",
+        "vercel-scripts.com"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "profiling": false
+    },
+    {
+      "id": "wordpress-stats",
+      "name": "WordPress.com Stats and Jetpack",
+      "operator": "Automattic Inc.",
+      "website": "https://automattic.com/",
+      "category": "analytics",
+      "domains": [
+        "stats.wp.com",
+        "pixel.wp.com",
+        "wp.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "gravatar",
+      "name": "Gravatar",
+      "operator": "Automattic Inc.",
+      "website": "https://gravatar.com/",
+      "category": "avatars",
+      "domains": [
+        "gravatar.com"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "note": "Gravatar image addresses contain a hash of the person's email address, which can be matched back to the email."
+    },
+    {
+      "id": "hubspot",
+      "name": "HubSpot",
+      "operator": "HubSpot, Inc.",
+      "website": "https://www.hubspot.com/",
+      "category": "marketing-automation",
+      "domains": [
+        "hubspot.com",
+        "hubspot.net",
+        "hs-scripts.com",
+        "hs-analytics.net",
+        "hs-banner.com",
+        "hsforms.com",
+        "hsforms.net",
+        "hscollectedforms.net",
+        "hsadspixel.net",
+        "usemessages.com",
+        "hubapi.com"
+      ],
+      "cookies": [
+        "hubspotutk",
+        "__hstc",
+        "__hssc",
+        "__hssrc"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "salesforce",
+      "name": "Salesforce (including Pardot / Account Engagement)",
+      "operator": "Salesforce, Inc.",
+      "website": "https://www.salesforce.com/",
+      "category": "marketing-automation",
+      "domains": [
+        "salesforce.com",
+        "force.com",
+        "pardot.com",
+        "salesforceliveagent.com",
+        "exacttarget.com"
+      ],
+      "cookies": [
+        "visitor_id*",
+        "pardot"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "marketo",
+      "name": "Marketo",
+      "operator": "Adobe Inc.",
+      "website": "https://business.adobe.com/products/marketo.html",
+      "category": "marketing-automation",
+      "domains": [
+        "marketo.net",
+        "marketo.com",
+        "mktoresp.com"
+      ],
+      "cookies": [
+        "_mkto_trk"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "klaviyo",
+      "name": "Klaviyo",
+      "operator": "Klaviyo, Inc.",
+      "website": "https://www.klaviyo.com/",
+      "category": "marketing-automation",
+      "domains": [
+        "klaviyo.com"
+      ],
+      "cookies": [
+        "__kla_id"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "mailchimp",
+      "name": "Mailchimp",
+      "operator": "Intuit Inc.",
+      "website": "https://mailchimp.com/",
+      "category": "marketing-email",
+      "domains": [
+        "mailchimp.com",
+        "list-manage.com",
+        "chimpstatic.com",
+        "mcusercontent.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "brevo",
+      "name": "Brevo (formerly Sendinblue)",
+      "operator": "Sendinblue SAS",
+      "website": "https://www.brevo.com/",
+      "category": "marketing-email",
+      "domains": [
+        "brevo.com",
+        "sendinblue.com",
+        "sibforms.com",
+        "sibautomation.com"
+      ],
+      "hq": {
+        "country": "FR"
+      }
+    },
+    {
+      "id": "onetrust",
+      "name": "OneTrust",
+      "operator": "OneTrust LLC",
+      "website": "https://www.onetrust.com/",
+      "category": "consent",
+      "domains": [
+        "onetrust.com",
+        "cookielaw.org"
+      ],
+      "cookies": [
+        "OptanonConsent",
+        "OptanonAlertBoxClosed"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "cookiebot",
+      "name": "Cookiebot",
+      "operator": "Usercentrics A/S",
+      "website": "https://www.cookiebot.com/",
+      "category": "consent",
+      "domains": [
+        "cookiebot.com",
+        "cookiebot.eu"
+      ],
+      "cookies": [
+        "CookieConsent"
+      ],
+      "hq": {
+        "country": "DK"
+      }
+    },
+    {
+      "id": "usercentrics",
+      "name": "Usercentrics",
+      "operator": "Usercentrics GmbH",
+      "website": "https://usercentrics.com/",
+      "category": "consent",
+      "domains": [
+        "usercentrics.eu",
+        "usercentrics.com"
+      ],
+      "hq": {
+        "country": "DE"
+      }
+    },
+    {
+      "id": "didomi",
+      "name": "Didomi",
+      "operator": "Didomi SAS",
+      "website": "https://www.didomi.io/",
+      "category": "consent",
+      "domains": [
+        "didomi.io",
+        "privacy-center.org"
+      ],
+      "cookies": [
+        "didomi_token"
+      ],
+      "hq": {
+        "country": "FR"
+      }
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare (CDN, cdnjs)",
+      "operator": "Cloudflare, Inc.",
+      "website": "https://www.cloudflare.com/",
+      "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
+      "category": "cdn",
+      "domains": [
+        "cloudflare.com",
+        "cloudflare.net",
+        "cloudflare-dns.com"
+      ],
+      "cookies": [
+        "__cf_bm",
+        "cf_clearance",
+        "__cfruid"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "cloudflare-turnstile",
+      "name": "Cloudflare Turnstile",
+      "operator": "Cloudflare, Inc.",
+      "website": "https://www.cloudflare.com/products/turnstile/",
+      "privacyUrl": "https://www.cloudflare.com/privacypolicy/",
+      "category": "captcha",
+      "domains": [
+        "challenges.cloudflare.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "jsdelivr",
+      "name": "jsDelivr",
+      "operator": "jsDelivr (community CDN)",
+      "website": "https://www.jsdelivr.com/",
+      "category": "cdn",
+      "domains": [
+        "jsdelivr.net"
+      ],
+      "hq": null,
+      "note": "A public open source CDN served through several networks. Check jsdelivr.com for who operates it and where."
+    },
+    {
+      "id": "unpkg",
+      "name": "unpkg",
+      "operator": "unpkg (community CDN)",
+      "website": "https://unpkg.com/",
+      "category": "cdn",
+      "domains": [
+        "unpkg.com"
+      ],
+      "hq": null
+    },
+    {
+      "id": "fastly",
+      "name": "Fastly",
+      "operator": "Fastly, Inc.",
+      "website": "https://www.fastly.com/",
+      "category": "cdn",
+      "domains": [
+        "fastly.net",
+        "fastly.com",
+        "fastlylb.net"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "akamai",
+      "name": "Akamai",
+      "operator": "Akamai Technologies, Inc.",
+      "website": "https://www.akamai.com/",
+      "category": "cdn",
+      "domains": [
+        "akamai.net",
+        "akamaihd.net",
+        "akamaized.net",
+        "akamaiedge.net",
+        "akstat.io",
+        "go-mpulse.net"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "aws",
+      "name": "Amazon Web Services (S3, CloudFront)",
+      "operator": "Amazon Web Services, Inc.",
+      "website": "https://aws.amazon.com/",
+      "category": "hosting",
+      "domains": [
+        "amazonaws.com",
+        "cloudfront.net",
+        "awsstatic.com"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "note": "AWS has data centre regions in Canada, including Montréal. The region a bucket or distribution uses decides where the data is stored."
+    },
+    {
+      "id": "bunny",
+      "name": "Bunny CDN",
+      "operator": "BunnyWay d.o.o.",
+      "website": "https://bunny.net/",
+      "category": "cdn",
+      "domains": [
+        "b-cdn.net",
+        "bunny.net",
+        "bunnycdn.com"
+      ],
+      "hq": {
+        "country": "SI"
+      }
+    },
+    {
+      "id": "adobe-fonts",
+      "name": "Adobe Fonts (Typekit)",
+      "operator": "Adobe Inc.",
+      "website": "https://fonts.adobe.com/",
+      "category": "fonts",
+      "domains": [
+        "typekit.net",
+        "typekit.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "adobe-experience-cloud",
+      "name": "Adobe Analytics and Experience Cloud",
+      "operator": "Adobe Inc.",
+      "website": "https://business.adobe.com/",
+      "category": "analytics",
+      "domains": [
+        "omtrdc.net",
+        "demdex.net",
+        "adobedtm.com",
+        "2o7.net",
+        "everesttech.net"
+      ],
+      "cookies": [
+        "AMCV_*",
+        "AMCVS_*",
+        "s_cc",
+        "s_sq",
+        "s_vi"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "font-awesome",
+      "name": "Font Awesome",
+      "operator": "Fonticons, Inc.",
+      "website": "https://fontawesome.com/",
+      "category": "fonts",
+      "domains": [
+        "fontawesome.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "shopify",
+      "name": "Shopify",
+      "operator": "Shopify Inc.",
+      "website": "https://www.shopify.com/",
+      "privacyUrl": "https://www.shopify.com/legal/privacy",
+      "category": "hosting",
+      "domains": [
+        "shopify.com",
+        "myshopify.com",
+        "shopifysvc.com",
+        "shop.app"
+      ],
+      "cookies": [
+        "_shopify_*",
+        "_y",
+        "_s",
+        "cart*",
+        "_tracking_consent"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "ON"
+      },
+      "note": "Shopify is headquartered in Ottawa, Ontario. Ontario is outside Québec under s. 17, and Shopify uses service providers in other countries too."
+    },
+    {
+      "id": "lightspeed",
+      "name": "Lightspeed",
+      "operator": "Lightspeed Commerce Inc.",
+      "website": "https://www.lightspeedhq.com/",
+      "category": "hosting",
+      "domains": [
+        "lightspeedhq.com"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "QC"
+      }
+    },
+    {
+      "id": "coveo",
+      "name": "Coveo",
+      "operator": "Coveo Solutions Inc.",
+      "website": "https://www.coveo.com/",
+      "category": "search",
+      "domains": [
+        "coveo.com"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "QC"
+      },
+      "note": "Coveo is headquartered in Québec City, but its cloud platform runs in several regions. Check which region your organization uses."
+    },
+    {
+      "id": "moneris",
+      "name": "Moneris",
+      "operator": "Moneris Solutions Corporation",
+      "website": "https://www.moneris.com/",
+      "category": "payments",
+      "domains": [
+        "moneris.com"
+      ],
+      "hq": {
+        "country": "CA",
+        "region": "ON"
+      }
+    },
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "operator": "Stripe, Inc.",
+      "website": "https://stripe.com/",
+      "privacyUrl": "https://stripe.com/privacy",
+      "category": "payments",
+      "domains": [
+        "stripe.com",
+        "stripe.network",
+        "stripecdn.com"
+      ],
+      "cookies": [
+        "__stripe_mid",
+        "__stripe_sid"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "note": "Stripe customers in Canada may contract with a Stripe entity other than Stripe, Inc. Check your services agreement."
+    },
+    {
+      "id": "paypal",
+      "name": "PayPal",
+      "operator": "PayPal Holdings, Inc.",
+      "website": "https://www.paypal.com/",
+      "category": "payments",
+      "domains": [
+        "paypal.com",
+        "paypalobjects.com",
+        "braintreegateway.com",
+        "braintree-api.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "square",
+      "name": "Square",
+      "operator": "Block, Inc.",
+      "website": "https://squareup.com/",
+      "category": "payments",
+      "domains": [
+        "squareup.com",
+        "squarecdn.com",
+        "square.site"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "klarna",
+      "name": "Klarna",
+      "operator": "Klarna Bank AB",
+      "website": "https://www.klarna.com/",
+      "category": "payments",
+      "domains": [
+        "klarna.com",
+        "klarnaservices.com",
+        "klarnacdn.net"
+      ],
+      "hq": {
+        "country": "SE"
+      }
+    },
+    {
+      "id": "intercom",
+      "name": "Intercom",
+      "operator": "Intercom, Inc.",
+      "website": "https://www.intercom.com/",
+      "category": "chat-support",
+      "domains": [
+        "intercom.io",
+        "intercom.com",
+        "intercomcdn.com",
+        "intercomassets.com"
+      ],
+      "cookies": [
+        "intercom-*"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "zendesk",
+      "name": "Zendesk",
+      "operator": "Zendesk, Inc.",
+      "website": "https://www.zendesk.com/",
+      "category": "chat-support",
+      "domains": [
+        "zendesk.com",
+        "zdassets.com",
+        "zopim.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "freshworks",
+      "name": "Freshworks (Freshdesk, Freshchat)",
+      "operator": "Freshworks Inc.",
+      "website": "https://www.freshworks.com/",
+      "category": "chat-support",
+      "domains": [
+        "freshworks.com",
+        "freshdesk.com",
+        "freshchat.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "crisp",
+      "name": "Crisp",
+      "operator": "Crisp IM SAS",
+      "website": "https://crisp.chat/",
+      "category": "chat-support",
+      "domains": [
+        "crisp.chat"
+      ],
+      "cookies": [
+        "crisp-client*"
+      ],
+      "hq": {
+        "country": "FR"
+      }
+    },
+    {
+      "id": "typeform",
+      "name": "Typeform",
+      "operator": "Typeform S.L.",
+      "website": "https://www.typeform.com/",
+      "category": "forms",
+      "domains": [
+        "typeform.com"
+      ],
+      "hq": {
+        "country": "ES"
+      }
+    },
+    {
+      "id": "calendly",
+      "name": "Calendly",
+      "operator": "Calendly LLC",
+      "website": "https://calendly.com/",
+      "category": "scheduling",
+      "domains": [
+        "calendly.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "vimeo",
+      "name": "Vimeo",
+      "operator": "Vimeo, Inc.",
+      "website": "https://vimeo.com/",
+      "category": "video",
+      "domains": [
+        "vimeo.com",
+        "vimeocdn.com"
+      ],
+      "cookies": [
+        "vuid"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "wix",
+      "name": "Wix",
+      "operator": "Wix.com Ltd.",
+      "website": "https://www.wix.com/",
+      "category": "hosting",
+      "domains": [
+        "wix.com",
+        "wixstatic.com",
+        "parastorage.com",
+        "wixapps.net"
+      ],
+      "hq": {
+        "country": "IL"
+      }
+    },
+    {
+      "id": "squarespace",
+      "name": "Squarespace",
+      "operator": "Squarespace, Inc.",
+      "website": "https://www.squarespace.com/",
+      "category": "hosting",
+      "domains": [
+        "squarespace.com",
+        "squarespace-cdn.com",
+        "sqspcdn.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "operator": "Vercel Inc.",
+      "website": "https://vercel.com/",
+      "category": "hosting",
+      "domains": [
+        "vercel.app",
+        "vercel.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "netlify",
+      "name": "Netlify",
+      "operator": "Netlify, Inc.",
+      "website": "https://www.netlify.com/",
+      "category": "hosting",
+      "domains": [
+        "netlify.app",
+        "netlify.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "mapbox",
+      "name": "Mapbox",
+      "operator": "Mapbox, Inc.",
+      "website": "https://www.mapbox.com/",
+      "category": "maps",
+      "domains": [
+        "mapbox.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "openstreetmap",
+      "name": "OpenStreetMap tiles",
+      "operator": "OpenStreetMap Foundation",
+      "website": "https://www.openstreetmap.org/",
+      "category": "maps",
+      "domains": [
+        "openstreetmap.org"
+      ],
+      "hq": {
+        "country": "GB"
+      }
+    },
+    {
+      "id": "hcaptcha",
+      "name": "hCaptcha",
+      "operator": "Intuition Machines, Inc.",
+      "website": "https://www.hcaptcha.com/",
+      "category": "captcha",
+      "domains": [
+        "hcaptcha.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "operator": "Functional Software, Inc.",
+      "website": "https://sentry.io/",
+      "category": "monitoring",
+      "domains": [
+        "sentry.io",
+        "sentry-cdn.com"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "datadog",
+      "name": "Datadog",
+      "operator": "Datadog, Inc.",
+      "website": "https://www.datadoghq.com/",
+      "category": "monitoring",
+      "domains": [
+        "datadoghq.com",
+        "datadoghq.eu",
+        "datadoghq-browser-agent.com",
+        "browser-intake-datadoghq.com"
+      ],
+      "cookies": [
+        "_dd_s"
+      ],
+      "hq": {
+        "country": "US"
+      },
+      "note": "Datadog Real User Monitoring can include session replay. Check whether it's switched on."
+    },
+    {
+      "id": "new-relic",
+      "name": "New Relic",
+      "operator": "New Relic, Inc.",
+      "website": "https://newrelic.com/",
+      "category": "monitoring",
+      "domains": [
+        "newrelic.com",
+        "nr-data.net"
+      ],
+      "cookies": [
+        "JSESSIONID"
+      ],
+      "hq": {
+        "country": "US"
+      }
+    },
+    {
+      "id": "algolia",
+      "name": "Algolia",
+      "operator": "Algolia",
+      "website": "https://www.algolia.com/",
+      "category": "search",
+      "domains": [
+        "algolia.net",
+        "algolianet.com",
+        "algolia.io",
+        "algolia.com"
+      ],
+      "hq": null
+    },
+    {
+      "id": "trustpilot",
+      "name": "Trustpilot",
+      "operator": "Trustpilot A/S",
+      "website": "https://www.trustpilot.com/",
+      "category": "reviews",
+      "domains": [
+        "trustpilot.com",
+        "trustpilot.net"
+      ],
+      "hq": {
+        "country": "DK"
+      }
+    },
+    {
+      "id": "loqate",
+      "name": "Loqate",
+      "operator": "GBG plc",
+      "website": "https://www.loqate.com/",
+      "category": "address-lookup",
+      "domains": [
+        "loqate.com",
+        "addressy.com",
+        "pcapredict.com"
+      ],
+      "hq": {
+        "country": "GB"
+      }
+    }
+  ]
+}
