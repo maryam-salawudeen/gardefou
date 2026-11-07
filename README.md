@@ -119,7 +119,10 @@ jobs:
       - name: Start Ollama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
+          # The installer starts a service only where systemd runs, which
+          # isn't every runner, so start the server if it isn't answering.
+          curl -sf http://localhost:11434/api/tags >/dev/null || (nohup ollama serve > /tmp/ollama.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
           ollama pull "$MODEL"
 
       - uses: maryam-salawudeen/gardefou@v0
