@@ -1,0 +1,20 @@
+# Gardefou reviews its own pull requests, using GitHub Models so it costs nothing.
+name: Privacy and AI review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The local copy, so each pull request is reviewed by the code it changes.
+      - uses: ./
+        with:
+          ai-provider: github-models

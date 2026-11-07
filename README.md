@@ -59,10 +59,23 @@ AI findings also cite the [OPC's generative AI principles](https://www.priv.gc.c
 
 It's a security tool, so it holds itself to the same rules:
 
-- Without an API key it runs entirely on rules, on the GitHub runner or your machine. Nothing leaves except the comments it posts to GitHub.
-- With a key, Claude checks each finding in context, drops the ones that don't hold up, and adds what the rules missed. Before the diff is sent, secrets are always removed, and emails, SINs, phone and card numbers are too unless you set `ai.redact: false`. The summary says how many values were removed.
+- By default it runs entirely on rules, on the GitHub runner or your machine. Nothing leaves except the comments it posts to GitHub.
+- When you turn on the AI review, a model checks each finding in context, drops the ones that don't hold up, and adds what the rules missed. Before the diff is sent, secrets are always removed, and emails, SINs, phone and card numbers are too unless you set `ai.redact: false`. The summary says how many values were removed.
+- A model can't dismiss a leaked key. Secret findings stay even if the model says otherwise.
 - Comments never quote a secret. The line is shown with the key replaced by `[REDACTED ...]`.
 - The AI review is told to treat the diff as data and ignore instructions inside it, and it can only cite the sections in `src/law.ts` and comment on lines the pull request adds.
+
+## The AI review, free or paid
+
+The rules find most problems on their own. The AI review is an optional second pass that reads each finding in context, removes false alarms, rewrites the comment for the actual code, and adds what the rules missed. You can run it three ways:
+
+| | Cost | Where the diff goes | Best for |
+|---|---|---|---|
+| **GitHub Models** | Free, within GitHub's daily limits (around 50 to 150 requests a day, depending on the model) | GitHub's model service | Pull requests in GitHub Actions |
+| **Ollama** | Free | Nowhere. The model runs on your machine | The command line, and code you can't send anywhere |
+| **Claude** | Paid, with your Anthropic API key | Anthropic | Large pull requests and the most thorough review |
+
+GitHub Models' free tier only takes a few thousand tokens per request, so Gardefou sends it a trimmed prompt: the files with findings first, and only the sections those findings cite. On a large pull request, part of the diff is left out and the summary says so. If the daily limit runs out, the rules still run and the summary says the AI review will be back the next day.
 
 ## What a comment looks like
 
@@ -91,6 +104,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  models: read # for the free AI review; remove it if you don't use github-models
 
 jobs:
   review:
@@ -100,7 +114,7 @@ jobs:
       - uses: maryam-salawudeen/gardefou@v0
         id: review
         with:
-          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }} # optional
+          ai-provider: github-models # free; or leave this out for rules only
       - uses: actions/upload-artifact@v4
         if: steps.review.outputs.pia-dir != ''
         with:
@@ -112,8 +126,9 @@ It runs on `pull_request`, not `pull_request_target`, so code from forks never r
 
 | Input | Default | |
 |---|---|---|
-| `anthropic-api-key` | none | Turns on the AI review |
-| `model` | `claude-opus-5-5` | Claude model for the AI review |
+| `ai-provider` | `auto` | `github-models` (free), `anthropic`, `none`, or `auto` (Claude if a key is set, otherwise rules only) |
+| `anthropic-api-key` | none | For `ai-provider: anthropic` |
+| `model` | `openai/gpt-4.1` for GitHub Models, `claude-opus-5-5` for Claude | |
 | `fail-on` | from the config file | Fail the check at `high`, `medium` or `low` |
 | `config-path` | `.gardefou.yml` | |
 | `pia-dir` | `gardefou-pia` | Where PIA drafts are written |
@@ -126,7 +141,18 @@ Needs Node 20 or later.
 npx gardefou --base main
 ```
 
-It compares your working tree with where your branch left `main`. Add `--ai` to have Claude check the findings (it reads `ANTHROPIC_API_KEY` and costs API credits), `--pia-dir pia` to write the PIA drafts, `--format markdown` or `--format json` for other output, and `--fail-on high` to use it in a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
+It compares your working tree with where your branch left `main`.
+
+For the free AI review on your own machine, [install Ollama](https://ollama.com), pull a model, and pass `--ai ollama`:
+
+```bash
+ollama pull qwen2.5-coder:7b
+npx gardefou --base main --ai ollama
+```
+
+Nothing leaves your computer. `--model` picks another model, and `--ai-url` points at another OpenAI-compatible server, such as LM Studio (`--ai-url http://localhost:1234/v1`). `--ai github-models` uses GitHub Models with a `GITHUB_TOKEN` that has the models scope, and `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
+
+Other options: `--pia-dir pia` writes the PIA drafts, `--format markdown` and `--format json` change the output, and `--fail-on high` makes it usable as a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
 
 ## Use it in any AI assistant
 

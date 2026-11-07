@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { CONFIG_FILE, loadConfig } from "./config.js";
 import { summaryComment, terminalReport } from "./format.js";
-import { review, shouldFail } from "./review.js";
+import { AI_PROVIDERS, type AiProvider } from "./ai.js";
+import { review, shouldFail, type ReviewOptions } from "./review.js";
 import type { Severity } from "./types.js";
 import { loadVendors } from "./vendors.js";
 
@@ -17,8 +18,15 @@ Options:
   --base <ref>       Branch to compare with (default: main)
   --diff <file>      Read a unified diff from a file, or "-" for stdin
   --format <fmt>     text (default), markdown or json
-  --ai               Check each finding with Claude (needs ANTHROPIC_API_KEY; costs API credits)
-  --model <id>       Model for --ai (default: claude-opus-5-5)
+  --ai <provider>    Have an AI model check each finding in context:
+                       ollama         a model on this machine (free; nothing leaves it)
+                       github-models  GitHub Models (free daily limit; needs GITHUB_TOKEN
+                                      with the models scope)
+                       anthropic      Claude (needs ANTHROPIC_API_KEY; costs API credits)
+  --model <id>       Model for --ai (defaults: ollama qwen2.5-coder:7b,
+                     github-models openai/gpt-4.1, anthropic claude-opus-5-5)
+  --ai-url <url>     Server for ollama, or any OpenAI-compatible server such as
+                     LM Studio (default: http://localhost:11434/v1)
   --pia-dir <dir>    Write privacy impact assessment drafts here
   --fail-on <level>  Exit with code 1 at this severity or above: high, medium, low
   --config <file>    Config file (default: ${CONFIG_FILE})
@@ -31,8 +39,9 @@ async function main() {
       base: { type: "string", default: "main" },
       diff: { type: "string" },
       format: { type: "string", default: "text" },
-      ai: { type: "boolean", default: false },
+      ai: { type: "string" },
       model: { type: "string" },
+      "ai-url": { type: "string" },
       "pia-dir": { type: "string" },
       "fail-on": { type: "string" },
       config: { type: "string", default: CONFIG_FILE },
@@ -57,7 +66,7 @@ async function main() {
   const result = await review(diff, {
     config,
     db: loadVendors(),
-    ai: values.ai ? { model: values.model } : null,
+    ai: aiOptions(values.ai, values.model, values["ai-url"]),
     pia: { date: new Date().toISOString().slice(0, 10) },
     log: (msg) => process.stderr.write(msg + "\n"),
   });
@@ -77,6 +86,23 @@ async function main() {
   }
 
   if (shouldFail(result.findings, config)) process.exitCode = 1;
+}
+
+function aiOptions(provider: string | undefined, model?: string, baseUrl?: string): ReviewOptions["ai"] {
+  if (!provider) return null;
+  if (!(AI_PROVIDERS as string[]).includes(provider)) {
+    throw new Error(`--ai must be one of ${AI_PROVIDERS.join(", ")}.`);
+  }
+  if (provider === "github-models" && !process.env.GITHUB_TOKEN) {
+    throw new Error("--ai github-models needs GITHUB_TOKEN set to a token with the models scope.");
+  }
+  return {
+    provider: provider as AiProvider,
+    // Anthropic reads its key from the environment itself.
+    apiKey: provider === "github-models" ? process.env.GITHUB_TOKEN : undefined,
+    model,
+    baseUrl,
+  };
 }
 
 main().catch((err) => {

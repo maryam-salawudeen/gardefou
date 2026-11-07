@@ -1,4 +1,4 @@
-import { aiReview } from "./ai.js";
+import { aiReview, type AiProvider } from "./ai.js";
 import { covers, pathFilter, type Config } from "./config.js";
 import { parseDiff } from "./diff.js";
 import { draftPia, type PiaContext } from "./pia.js";
@@ -9,8 +9,8 @@ import { outsideCanada, outsideQuebec, type VendorDb } from "./vendors.js";
 export interface ReviewOptions {
   config: Config;
   db: VendorDb;
-  /** Without a key the review runs on rules alone. */
-  ai?: { apiKey?: string; model?: string } | null;
+  /** Without this the review runs on rules alone. */
+  ai?: { provider: AiProvider; apiKey?: string; model?: string; baseUrl?: string } | null;
   pia: PiaContext;
   log?: (msg: string) => void;
 }

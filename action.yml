@@ -9,12 +9,18 @@ inputs:
   github-token:
     description: Token used to read the diff and post comments.
     default: ${{ github.token }}
+  ai-provider:
+    description: >-
+      Which AI checks each rule finding in context and looks for ones the rules missed.
+      auto (Claude if anthropic-api-key is set, otherwise rules only), none, anthropic,
+      or github-models (free within GitHub's daily limits; the job needs `models: read` permission).
+    default: auto
   anthropic-api-key:
-    description: Optional. With a key, Claude checks each rule finding in context and looks for ones the rules missed. Without one, the review runs on rules alone.
+    description: Optional. Anthropic API key for the anthropic provider.
     required: false
   model:
-    description: Claude model for the AI pass.
-    default: claude-opus-5-5
+    description: Model for the AI review. Defaults to claude-opus-5-5 for anthropic and openai/gpt-4.1 for github-models.
+    required: false
   config-path:
     description: Path to the config file.
     default: .gardefou.yml
