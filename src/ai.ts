@@ -3,6 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import * as z from "zod/v4";
 import { isSectionId, LAW_NAMES, sectionsFor, SECTIONS, type SectionId } from "./law.js";
 import { redact } from "./redact.js";
+import { isComment } from "./rules/util.js";
 import { RULE_IDS, type DiffFile, type Finding, type Law, type RuleId } from "./types.js";
 
 /**
@@ -138,7 +139,7 @@ export async function aiReview(files: DiffFile[], findings: Finding[], opts: AiO
         ? await callOllama(prompt.user, model, baseUrl!)
         : await callOpenAiCompatible(prompt.user, model, baseUrl!, opts.apiKey, opts.provider);
 
-  return { ...applyOutput(output, files, findings, opts.laws), redacted: prompt.redacted, model: servedBy };
+  return { ...applyOutput(output, files, findings, opts.laws, defaults.compact), redacted: prompt.redacted, model: servedBy };
 }
 
 export function buildPrompt(
@@ -322,7 +323,11 @@ export function parseLenient(text: string): Output {
   };
 }
 
-function applyOutput(out: Output, files: DiffFile[], findings: Finding[], laws: Law[]) {
+/**
+ * Merges the model's answer into the rule findings. `smallModel` marks the
+ * local and compact providers, whose own findings are less reliable.
+ */
+export function applyOutput(out: Output, files: DiffFile[], findings: Finding[], laws: Law[], smallModel: boolean) {
   const reviewed: Finding[] = [];
   let dropped = 0;
   findings.forEach((finding, i) => {
@@ -334,15 +339,21 @@ function applyOutput(out: Output, files: DiffFile[], findings: Finding[], laws: 
   });
 
   // A comment on a line that isn't in the diff makes GitHub reject the whole review.
-  const addedLines = new Map(files.map((f) => [f.path, new Set(f.added.map((a) => a.line))]));
+  const addedLines = new Map(files.map((f) => [f.path, new Map(f.added.map((a) => [a.line, a.text]))]));
   const extra = out.additional
-    .filter((a) => addedLines.get(a.path)?.has(a.line))
+    .filter((a) => {
+      const text = addedLines.get(a.path)?.get(a.line);
+      // Code comments and blank lines don't handle data. The rules skip them
+      // too, apart from leaked keys, which the rules already cover.
+      return text !== undefined && text.trim() !== "" && !isComment(text);
+    })
     .map((a) => ({ ...a, sections: a.sections.filter(isSectionId) }))
     .filter((a) => sectionsFor(a.sections, laws).length > 0)
     .map(
       (a): Finding => ({
         rule: a.rule as RuleId,
-        severity: a.severity,
+        // A small model can't fail a check on its own say-so.
+        severity: smallModel && a.severity === "high" ? "medium" : a.severity,
         path: a.path,
         line: a.line,
         title: a.title,

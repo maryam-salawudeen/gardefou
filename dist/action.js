@@ -68379,6 +68379,27 @@ function luhn(value) {
   return sum % 10 === 0;
 }
 
+// src/rules/util.ts
+function isComment(text) {
+  return /^\s*(\/\/|#(?!\[)|\*|\/\*|<!--|--\s)/.test(text);
+}
+function normalizeIdentifier(name) {
+  return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2").replace(/[-\s]+/g, "_").toLowerCase();
+}
+function identifiers(text) {
+  return text.match(/[A-Za-z_][A-Za-z0-9_-]*/g) ?? [];
+}
+function hasSegments(normalized, words) {
+  return `_${normalized}_`.includes(`_${words}_`);
+}
+function isSchemaFile(path4) {
+  return /(migrat|schema|models?[/.]|entit|\.sql$|\.prisma$|\.graphql$|forms?[/.]|dto)/i.test(path4);
+}
+function truncate(text, max = 160) {
+  const t = text.trim();
+  return t.length > max ? t.slice(0, max - 1) + "\u2026" : t;
+}
+
 // src/ai.ts
 var PROVIDER_DEFAULTS = {
   anthropic: { model: "claude-opus-5-5", diffBudget: 12e4, compact: false },
@@ -68460,7 +68481,7 @@ async function aiReview(files, findings, opts) {
   }
   const prompt = buildPrompt(files, findings, opts.laws, defaults2, opts.redact);
   const { output, servedBy } = opts.provider === "anthropic" ? await callAnthropic(prompt.user, model, opts.apiKey) : opts.provider === "ollama" ? await callOllama(prompt.user, model, baseUrl) : await callOpenAiCompatible(prompt.user, model, baseUrl, opts.apiKey, opts.provider);
-  return { ...applyOutput(output, files, findings, opts.laws), redacted: prompt.redacted, model: servedBy };
+  return { ...applyOutput(output, files, findings, opts.laws, defaults2.compact), redacted: prompt.redacted, model: servedBy };
 }
 function buildPrompt(files, findings, laws, defaults2, personal) {
   const ids = defaults2.compact ? [.../* @__PURE__ */ new Set([...findings.flatMap((f) => f.sections), ...CORE_SECTIONS])].filter(isSectionId) : Object.keys(SECTIONS);
@@ -68607,7 +68628,7 @@ function parseLenient(text) {
     summary: typeof raw.summary === "string" ? raw.summary : ""
   };
 }
-function applyOutput(out, files, findings, laws) {
+function applyOutput(out, files, findings, laws, smallModel) {
   const reviewed = [];
   let dropped = 0;
   findings.forEach((finding2, i) => {
@@ -68616,11 +68637,15 @@ function applyOutput(out, files, findings, laws) {
     if (!verdict.keep && finding2.rule !== "ai-secret") return dropped++;
     reviewed.push({ ...finding2, severity: verdict.severity, body: verdict.body.trim() || finding2.body });
   });
-  const addedLines = new Map(files.map((f) => [f.path, new Set(f.added.map((a) => a.line))]));
-  const extra = out.additional.filter((a) => addedLines.get(a.path)?.has(a.line)).map((a) => ({ ...a, sections: a.sections.filter(isSectionId) })).filter((a) => sectionsFor(a.sections, laws).length > 0).map(
+  const addedLines = new Map(files.map((f) => [f.path, new Map(f.added.map((a) => [a.line, a.text]))]));
+  const extra = out.additional.filter((a) => {
+    const text = addedLines.get(a.path)?.get(a.line);
+    return text !== void 0 && text.trim() !== "" && !isComment(text);
+  }).map((a) => ({ ...a, sections: a.sections.filter(isSectionId) })).filter((a) => sectionsFor(a.sections, laws).length > 0).map(
     (a) => ({
       rule: a.rule,
-      severity: a.severity,
+      // A small model can't fail a check on its own say-so.
+      severity: smallModel && a.severity === "high" ? "medium" : a.severity,
       path: a.path,
       line: a.line,
       title: a.title,
@@ -68839,27 +68864,6 @@ function draftPia(vendor, finding2, ctx, config2) {
     ""
   ];
   return lines.join("\n");
-}
-
-// src/rules/util.ts
-function isComment(text) {
-  return /^\s*(\/\/|#(?!\[)|\*|\/\*|<!--|--\s)/.test(text);
-}
-function normalizeIdentifier(name) {
-  return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2").replace(/[-\s]+/g, "_").toLowerCase();
-}
-function identifiers(text) {
-  return text.match(/[A-Za-z_][A-Za-z0-9_-]*/g) ?? [];
-}
-function hasSegments(normalized, words) {
-  return `_${normalized}_`.includes(`_${words}_`);
-}
-function isSchemaFile(path4) {
-  return /(migrat|schema|models?[/.]|entit|\.sql$|\.prisma$|\.graphql$|forms?[/.]|dto)/i.test(path4);
-}
-function truncate(text, max = 160) {
-  const t = text.trim();
-  return t.length > max ? t.slice(0, max - 1) + "\u2026" : t;
 }
 
 // src/rules/pi.ts

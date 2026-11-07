@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildPrompt, parseLenient, PROVIDER_DEFAULTS } from "../src/ai.js";
+import { applyOutput, buildPrompt, parseLenient, PROVIDER_DEFAULTS } from "../src/ai.js";
 import { DEFAULT_CONFIG } from "../src/config.js";
 import { parseDiff } from "../src/diff.js";
 import { review } from "../src/review.js";
@@ -128,5 +128,46 @@ describe("answers from smaller models", () => {
     const result = await review(diff, { config: DEFAULT_CONFIG, db, ai: { provider: "ollama" }, pia });
     expect(result.findings.some((f) => f.rule === "ai-secret")).toBe(true);
     expect(call(fetch)[1].body).not.toContain(key);
+  });
+});
+
+describe("findings a model adds on its own", () => {
+  // The same shape as the false alarm qwen2.5-coder:3b raised on Gardefou's own pull request #1.
+  const files = parseDiff(
+    [
+      "diff --git a/src/ai.ts b/src/ai.ts",
+      "--- a/src/ai.ts",
+      "+++ b/src/ai.ts",
+      "@@ -1,0 +1,4 @@",
+      "+/**",
+      "+ * - anthropic: Claude, with your API key. Paid, largest context.",
+      "+ */",
+      "+const prompt = `Summarize ${user.email}`;",
+      "",
+    ].join("\n"),
+  );
+  const addition = (line: number, severity: "high" | "medium" = "high") => ({
+    path: "src/ai.ts",
+    line,
+    rule: "personal-info-leak" as const,
+    severity,
+    title: "t",
+    body: "b",
+    sections: ["owasp-llm02"],
+  });
+
+  it("drops findings on comment lines", () => {
+    const out = applyOutput({ verdicts: [], additional: [addition(2)], summary: "" }, files, [], DEFAULT_CONFIG.laws, true);
+    expect(out.findings).toEqual([]);
+  });
+
+  it("caps a small model's own high findings at medium", () => {
+    const out = applyOutput({ verdicts: [], additional: [addition(4)], summary: "" }, files, [], DEFAULT_CONFIG.laws, true);
+    expect(out.findings[0]?.severity).toBe("medium");
+  });
+
+  it("keeps Claude's own high findings high", () => {
+    const out = applyOutput({ verdicts: [], additional: [addition(4)], summary: "" }, files, [], DEFAULT_CONFIG.laws, false);
+    expect(out.findings[0]?.severity).toBe("high");
   });
 });
