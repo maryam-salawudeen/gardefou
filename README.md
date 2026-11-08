@@ -1,101 +1,40 @@
 # Gardefou
 
-*Garde-fou* is French for guardrail. Gardefou sets AI and privacy guardrails for Canadian code.
+*Garde-fou* is French for guardrail. Gardefou checks code changes for two things before they go live: whether they use AI safely, and how they handle personal information under Canadian privacy law. It's free, and it runs on GitHub, on your own computer, or inside AI assistants like Claude, ChatGPT, Gemini, Copilot, Cursor and Codex.
 
-It's a free, open source pull request reviewer that sets the boundary for how a Canadian company uses AI and handles personal information. It comments on the lines that leak an AI key, write untrusted text into a prompt, trust model output as code, give an agent more power than it needs, send personal information to a new vendor or an AI provider, or store sensitive data. Each comment cites Canadian privacy law (PIPEDA, Québec's Law 25, Alberta and BC PIPA, and the provincial health information acts) or the AI security guidance it relates to. When data starts going to a new vendor, it drafts the privacy impact assessment.
+Think of it as the security guard at the entrance of a building. Every change has to pass the front desk, and Gardefou looks at what's coming in: a master key left on the counter, someone carrying out a box of customer files, a new contractor handed keys to every room. When it spots one, it points at the exact line, says what to do, and names the law or security guidance it relates to. When a change starts sending data to a new company, it also drafts the privacy impact assessment (PIA), the risk assessment privacy law asks for before personal information goes to that company.
 
-It runs three ways, from the same rules:
+> **Informational, not legal advice.** Gardefou reads code changes. It can't see your contracts, where a company actually stores data, or what your privacy policy says. Have the person in charge of personal information confirm anything that matters.
 
-- **As a GitHub Action** that comments on every pull request.
-- **As a command** you run on your branch before you push.
-- **As a prompt** for Claude Code, Codex, Gemini CLI, Cursor, Copilot, ChatGPT, Gemini or Claude, so you can ask any assistant for the review.
+## Why I built it
 
-Everything is MIT-licensed. There's no paid version.
+Companies are adding Claude, ChatGPT and AI agents (AI that can take actions by itself, not only chat) to their products and their daily work much faster than they're writing rules for them. I kept seeing the same problems in code:
 
-> **Informational, not legal advice.** It reads code changes. It can't see your contracts, where a vendor actually processes data, or what your privacy policy says. Have the person in charge of personal information confirm anything that matters.
+- an API key, the password a program uses to reach an AI service, sitting in a website's code where any visitor can copy it
+- customer records pasted into prompts sent to an AI company
+- a chatbot whose instructions include whatever the customer typed, so a customer can rewrite its instructions
+- AI agents allowed to run any command on a developer's laptop without asking
 
-## Why
+Canadian privacy law already covers a lot of this. When you send personal information to an AI company, you're sharing it with a third party, and you stay responsible for what that company does with it. If the people are in Québec, Law 25 asks for a privacy impact assessment before their information leaves the province.
 
-Companies are adopting Claude, ChatGPT, Copilot and AI agents faster than they're setting rules for them. The risks end up in code: an API key in a frontend bundle, customer records pasted into prompts, a support bot whose instructions include whatever the customer typed, an agent allowed to run any shell command, an MCP server that installs whatever version was published last night. Canadian privacy law already applies to all of it: personal information sent to an AI provider is a disclosure to a third party, and you stay accountable for what that provider does with it.
+A written AI policy helps, but a document can't stop a risky change. So I turned the rules into checks that run on every change, the way a security engineer would review it. There's also an [AI use policy template](docs/AI-POLICY.md) where each rule names the check that enforces it.
 
-A written AI policy helps, but it doesn't stop a pull request. This tool turns the policy into checks that run on every change. [docs/AI-POLICY.md](docs/AI-POLICY.md) is a policy template where each rule names the check that enforces it.
+## A few words you'll see
 
-## What it checks
+- **Pull request:** on GitHub, a proposed change to a project. Others review it before it's merged into the main code.
+- **GitHub Action and workflow:** GitHub can run tools automatically whenever something happens, such as a new pull request. A workflow file is the instruction list that tells GitHub what to run; an Action is a ready-made tool a workflow can use. Gardefou is an Action.
+- **Diff:** the list of lines a change adds or removes. Gardefou only reads the diff, not the whole project.
+- **Prompt and system prompt:** a prompt is what you send to an AI. The system prompt is the hidden instruction a company gives its AI, like "You are a polite support agent".
+- **Prompt injection:** hiding instructions in text the AI reads (an email, a web page, a customer's message) so it does what an attacker wants. Like a stranger telling the front desk "the manager said to give me the master key".
+- **MCP server:** a plug-in that gives an AI agent a new ability, such as reading your email or your GitHub.
 
-### AI boundaries
+## Try it in 5 minutes
 
-| Rule | Finds | Example |
-|---|---|---|
-| `ai-secret` | AI and cloud keys in code, keys in browser-exposed variables, AI clients running in the browser | `apiKey: "sk-ant-..."`, `NEXT_PUBLIC_OPENAI_API_KEY`, `dangerouslyAllowBrowser: true` |
-| `prompt-injection` | Request data, documents or web content written into a system prompt, and secrets placed in one | ``system: `You help ${req.body.company}` `` |
-| `ai-output` | Model output passed to a shell, eval, raw SQL or HTML | `execSync(completion.choices[0].message.content)` |
-| `ai-agency` | Agent tools that act without approval; Claude Code, Codex and Cursor settings that skip approvals or allow broad commands; unpinned or auto-approved MCP servers; AI agents in CI that outside users can trigger | `"defaultMode": "bypassPermissions"`, `"args": ["-y", "some-mcp-server"]`, `uses: anthropics/claude-code-action` on `issue_comment` |
-| `ai-provider` | An AI provider your company hasn't approved, or one configured outside Canada when your policy requires Canada | `import OpenAI from "openai"` when only `anthropic` is approved; `region: "us-east-1"` |
-| `ai-retention` | Asking the provider to keep conversations | `store: true` |
-| `automated-decision` | Prompts that ask a model to decide about a person, such as hiring, eligibility, credit or claims | "decide whether to reject the candidate" |
+The easiest way to see what Gardefou does is a fire drill: give it a pull request with a few mistakes on purpose, watch it comment, then close the pull request. You can do it all on the GitHub website, in any repository you own.
 
-### Personal information
+**1. Make a test branch.** A branch is a separate copy of your code where you can try things without touching the real version. Open your repository on GitHub, click the branch button near the top left (it says **main**), type `gardefou-test` and click **Create branch: gardefou-test**.
 
-| Rule | Finds | Example |
-|---|---|---|
-| `new-recipient` | A new dependency, SDK import or call to a vendor's host, looked up in a list of 113 vendors with their headquarters | `"@sentry/nextjs": "^9.0.0"`, `new OpenAI()`, `fetch("https://api.mixpanel.com/...")` |
-| `personal-info-field` | New columns, fields, types and form inputs that hold personal information, rated by sensitivity | `sin String?`, `dateOfBirth: Date`, `diagnosis TEXT` |
-| `personal-info-leak` | Personal information or whole records sent to logs, analytics, error trackers, AI prompts or URL query strings | `console.log(body.email)`, `posthog.capture("x", { email })`, a prompt containing `${user.firstName}` |
-| `over-collection` | Settings that collect more than the feature needs | `sendDefaultPii: true`, `maskAllText: false`, `navigator.geolocation.watchPosition(...)` |
-
-### Which laws it cites
-
-| Where the people are | Laws cited |
-|---|---|
-| Anywhere in Canada | PIPEDA, the federal law for private sector organizations |
-| Québec | Law 25 (the private sector Act, P-39.1), including s. 17 on information leaving Québec and s. 12.1 on automated decisions |
-| Alberta | Alberta PIPA, including s. 13.1 on service providers outside Canada |
-| British Columbia | BC PIPA |
-| Any province or territory with a health information act, when `health: true` | That act: Ontario PHIPA, Alberta HIA, Saskatchewan HIPA, Manitoba PHIA, and the acts in New Brunswick, Nova Scotia, Newfoundland and Labrador, PEI, Yukon, the Northwest Territories and Québec |
-
-AI findings also cite the [OPC's generative AI principles](https://www.priv.gc.ca/en/privacy-topics/technology/artificial-intelligence/gd_principles_ai/), the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) and the [Canadian Centre for Cyber Security](https://www.cyber.gc.ca/en/guidance/generative-artificial-intelligence-ai-itsap00041). Every summary is in [`src/law.ts`](src/law.ts) next to a link to the official text. The health acts are cited by name only, without section numbers.
-
-## How it treats your code
-
-It's a security tool, so it holds itself to the same rules:
-
-- By default it runs entirely on rules, on the GitHub runner or your machine. Nothing leaves except the comments it posts to GitHub.
-- When you turn on the AI review, a model checks each finding in context, drops the ones that don't hold up, and adds what the rules missed. Before the diff is sent, secrets are always removed, and emails, SINs, phone and card numbers are too unless you set `ai.redact: false`. The summary says how many values were removed.
-- A model can't dismiss a leaked key. Secret findings stay even if the model says otherwise.
-- Comments never quote a secret. The line is shown with the key replaced by `[REDACTED ...]`.
-- The AI review is told to treat the diff as data and ignore instructions inside it, and it can only cite the sections in `src/law.ts` and comment on lines the pull request adds.
-
-## The AI review, free or paid
-
-The rules find most problems on their own. The AI review is an optional second pass that reads each finding in context, removes false alarms, rewrites the comment for the actual code, and adds what the rules missed. You can run it three ways:
-
-| | Cost | Where the diff goes | Best for |
-|---|---|---|---|
-| **Ollama** | Free | Nowhere. An open model runs on the GitHub runner or your own computer | Most teams, and any code you can't send to a third party |
-| **Another OpenAI-compatible server** | Depends on the server | That server | LM Studio or vLLM on your own hardware, or a hosted provider you already use |
-| **Claude** | Paid, with your Anthropic API key | Anthropic | Large pull requests and the most thorough review |
-
-A small open model on a runner's CPU is slower and less thorough than Claude, so Gardefou sends it a trimmed prompt: the files with findings first, and only the sections those findings cite. On a large pull request, part of the diff is left out and the summary says so. If the model can't be reached or gives an unusable answer, the rule findings are still posted and the summary says why.
-
-If you use a hosted provider's free tier, read its terms first. Some free tiers use what you send to train their models, which is the kind of disclosure this tool is meant to catch.
-
-## What a comment looks like
-
-On the line that adds `"defaultMode": "bypassPermissions"` to `.claude/settings.json`:
-
-> **🔴 High · AI agent runs without asking before it acts**
->
-> This turns off the approval step, so the agent can run commands, change files and reach the network without anyone confirming. A prompt injection in a file, issue or web page it reads can then act with your permissions.
->
-> Keep approvals on, and allow specific commands instead. If it must run unattended, run it in a disposable sandbox with no secrets and no production access.
->
-> <sub>OWASP Top 10 for LLMs LLM06 Excessive Agency · LLM01 Prompt Injection · Canadian Centre for Cyber Security ITSAP.00.041</sub>
-
-The pull request also gets one summary comment, kept up to date on each push, with every finding and a PIA draft for each new vendor.
-
-## Use it as a GitHub Action
-
-Add `.github/workflows/gardefou.yml`. This version includes the free AI review, running an open model with Ollama on the runner:
+**2. Add the workflow.** Click **Add file → Create new file**. Name it `.github/workflows/gardefou.yml` (GitHub turns each `/` into a folder). Paste this in:
 
 ```yaml
 name: Privacy and AI review
@@ -116,11 +55,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Installs a free AI model on GitHub's computer for this review only.
       - name: Start Ollama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          # The installer starts a service only where systemd runs, which
-          # isn't every runner, so start the server if it isn't answering.
           curl -sf http://localhost:11434/api/tags >/dev/null || (nohup ollama serve > /tmp/ollama.log 2>&1 &)
           for i in $(seq 1 60); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
           ollama pull "$MODEL"
@@ -138,51 +76,157 @@ jobs:
           path: ${{ steps.review.outputs.pia-dir }}
 ```
 
-For rules only, delete the "Start Ollama" step and the `with:` block. For Claude, replace the `with:` block with `anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}`.
+Click **Commit changes...**, keep **Commit directly to the gardefou-test branch** selected, and click **Commit changes**.
 
-The Ollama step adds a few minutes to each run, because the runner downloads the model and runs it on its CPU. A 3-billion-parameter model like `qwen2.5-coder:3b` is a good balance on GitHub's standard runners; larger models are more thorough but slower. The step installs Ollama with its official install script; if your policy requires pinned installs, set `OLLAMA_VERSION` before the script runs.
+**3. Add some mistakes.** Click **Add file → Create new file** again. Name it `demo/test.ts` and paste these three lines:
 
-It runs on `pull_request`, not `pull_request_target`, so code from forks never runs with your secrets. On pull requests from forks, the token is read-only and the review appears in the job summary instead of as comments.
+```ts
+const openai = new OpenAI({ dangerouslyAllowBrowser: true });
+console.log("signup", body.email, body.sin);
+eval(answer.choices[0].message.content);
+```
 
-| Input | Default | |
+They contain three deliberate mistakes: an AI key that would be sent to every visitor's browser, an email and SIN written into a log file, and an AI's answer run as computer code. Commit the file to the same branch.
+
+**4. Open a pull request.** Go to the **Pull requests** tab, click **New pull request**, set the boxes to **main** ← **gardefou-test**, and click **Create pull request** twice.
+
+**5. Wait about 3 minutes, then refresh.** In the **Files changed** tab you'll see a comment from Gardefou on each of the three lines. In the **Conversation** tab there's one summary comment. Its last line says **Rules plus AI review (qwen2.5-coder:3b)** when the free AI check ran.
+
+**6. Clean up.** Click **Close pull request**. Don't merge it, so the deliberate mistakes never reach your real code.
+
+To keep Gardefou on the repository, add the same workflow file to `main`, without `demo/test.ts`.
+
+## What a comment looks like
+
+On a line that turns off the approval step for Claude Code (an AI agent that writes and runs code):
+
+> **🔴 High · AI agent runs without asking before it acts**
+>
+> This turns off the approval step, so the agent can run commands, change files and reach the network without anyone confirming. A prompt injection in a file, issue or web page it reads can then act with your permissions.
+>
+> Keep approvals on, and allow specific commands instead. If it must run unattended, run it in a disposable sandbox with no secrets and no production access.
+>
+> <sub>OWASP Top 10 for LLMs LLM06 Excessive Agency · LLM01 Prompt Injection · Canadian Centre for Cyber Security ITSAP.00.041</sub>
+
+## What it checks
+
+### Using AI safely
+
+| Rule | What it finds | Example |
+|---|---|---|
+| `ai-secret` | AI keys and other passwords written into code, or sent to the visitor's browser where anyone can copy them | `apiKey: "sk-ant-..."`, `NEXT_PUBLIC_OPENAI_API_KEY`, `dangerouslyAllowBrowser: true` |
+| `prompt-injection` | A customer's message, a document or a web page written into an AI's hidden instructions, or a password placed in them | ``system: `You help ${req.body.company}` `` |
+| `ai-output` | An AI's answer run as a command, as code, as a database query or shown as web page code, without checking it first | `execSync(completion.choices[0].message.content)` |
+| `ai-agency` | AI agents with too much power: tools that act without approval, settings that switch approvals off, plug-ins installed without a fixed version, AI agents on GitHub that strangers can trigger | `"defaultMode": "bypassPermissions"`, `"args": ["-y", "some-mcp-server"]` |
+| `ai-provider` | An AI company your company hasn't approved, or an AI service set up outside Canada when your policy requires Canada | `import OpenAI from "openai"` when only `anthropic` is approved; `region: "us-east-1"` |
+| `ai-retention` | Asking the AI company to keep a copy of conversations | `store: true` |
+| `automated-decision` | Asking an AI to decide something about a person, such as hiring, eligibility, credit or a claim | "decide whether to reject the candidate" |
+
+### Personal information
+
+| Rule | What it finds | Example |
+|---|---|---|
+| `new-recipient` | A change that starts sending data to a new company, by adding its code library (an SDK) or calling its servers. Gardefou knows where 113 common companies are headquartered | `"@sentry/nextjs": "^9.0.0"`, `new OpenAI()` |
+| `personal-info-field` | New places to store personal information, such as database columns and form fields, rated by how sensitive it is | `sin String?`, `dateOfBirth: Date`, `diagnosis TEXT` |
+| `personal-info-leak` | Personal information sent to log files, analytics tools, error trackers, AI prompts or web addresses | `console.log(body.email)`, `posthog.capture("x", { email })` |
+| `over-collection` | Settings that collect more than the feature needs | `sendDefaultPii: true`, `maskAllText: false`, location tracking |
+
+### Which laws it cites
+
+| Where the people are | Laws |
+|---|---|
+| Anywhere in Canada | PIPEDA, the federal privacy law for private businesses |
+| Québec | Law 25, including its rules on information leaving Québec (s. 17) and decisions made by computers alone (s. 12.1) |
+| Alberta | Alberta PIPA, including its rule on service providers outside Canada (s. 13.1) |
+| British Columbia | BC PIPA |
+| Any province or territory with a health information law, when `health: true` | That law, such as Ontario's PHIPA or Alberta's Health Information Act |
+
+AI findings also cite the [Privacy Commissioner's generative AI principles](https://www.priv.gc.ca/en/privacy-topics/technology/artificial-intelligence/gd_principles_ai/), the [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) (the standard list of the biggest security risks in AI applications) and the [Canadian Centre for Cyber Security](https://www.cyber.gc.ca/en/guidance/generative-artificial-intelligence-ai-itsap00041). Every summary is in [`src/law.ts`](src/law.ts) with a link to the official text. Health laws are cited by name only, because their section numbers differ by province.
+
+## The free AI check
+
+Gardefou's rules find most problems on their own. The AI check is an optional second look: an AI reads each finding in context, removes false alarms, rewrites the comment for your actual code, and adds what the rules missed.
+
+| | Cost | Where your code goes |
+|---|---|---|
+| **Ollama** (the workflow above) | Free | Nowhere. A free AI model is set up on GitHub's computer for each review, or runs on your own computer |
+| **Any OpenAI-compatible server** (software that accepts requests the same way OpenAI's service does) | Depends on the server | That server, for example LM Studio on your own computer |
+| **Claude** | Paid, with your Anthropic API key | Anthropic |
+
+[Ollama](https://ollama.com) is a free program that runs AI models on the computer itself instead of in someone else's cloud. It's like cooking at home instead of ordering from a restaurant: it costs nothing extra, and nobody outside sees what's in the pot. On GitHub's computer it adds two or three minutes to each review.
+
+A small free model makes more mistakes than Claude, so Gardefou is stricter with it. Problems the small model finds on its own are marked medium at most, so it can't block a change by itself, and it can never dismiss a leaked key.
+
+If you use a company's free AI plan instead, read its terms first. Some free plans use what you send them to train their models, which is the kind of data sharing Gardefou is meant to catch.
+
+## How it handles your code
+
+It's a security tool, so it follows its own rules:
+
+- **Rules only by default.** With no AI check, everything runs on GitHub's computer or yours. Nothing leaves except the comments posted to GitHub.
+- **Secrets removed first.** Before any AI sees the change, keys are always removed, and emails, SINs, phone and card numbers are too, unless you set `ai.redact: false`.
+- **Secrets never quoted.** Comments show the line with the key replaced by `[REDACTED ...]`.
+- **Code treated as text to review.** The AI check is told to ignore instructions hidden in the code, and it can only cite the sections in `src/law.ts` and comment on lines the pull request adds.
+
+## Use it as a GitHub Action
+
+The workflow in [Try it in 5 minutes](#try-it-in-5-minutes) is the full setup with the free AI check. Two other ways:
+
+- **Rules only:** delete the "Start Ollama" step and the `with:` block under Gardefou.
+- **Claude:** delete the "Start Ollama" step and replace the `with:` block with `anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}`. Save the key under **Settings → Secrets and variables → Actions** first.
+
+| Setting | Default | What it does |
 |---|---|---|
 | `ai-provider` | `auto` | `ollama` (free), `openai-compatible`, `anthropic`, `none`, or `auto` (Claude if a key is set, otherwise rules only) |
 | `model` | `qwen2.5-coder:7b` for Ollama, `claude-opus-5-5` for Claude | Required for `openai-compatible` |
 | `ai-url` | `http://localhost:11434` for Ollama | Required for `openai-compatible` |
 | `ai-api-key` | none | For an `openai-compatible` server that needs a key |
-| `anthropic-api-key` | none | For `ai-provider: anthropic` |
-| `fail-on` | from the config file | Fail the check at `high`, `medium` or `low` |
+| `anthropic-api-key` | none | For Claude |
+| `fail-on` | from the settings file | Mark the check as failed at `high`, `medium` or `low` |
 | `config-path` | `.gardefou.yml` | |
-| `pia-dir` | `gardefou-pia` | Where PIA drafts are written |
+| `pia-dir` | `gardefou-pia` | Where PIA drafts are saved |
+
+It runs on `pull_request`, never `pull_request_target`, so changes from strangers' copies of your repository (forks) never run with your secrets. On those, GitHub doesn't let it comment, so the review shows up on the job's summary page instead.
+
+**Blocking risky changes:** set `fail_on: high` in `.gardefou.yml`, then go to **Settings → Branches** and make **Privacy and AI review / review** a required check. GitHub then won't let a pull request be merged while it has a high-severity problem. Teams call this kind of automatic checking CI (continuous integration).
 
 ## Use it from the command line
 
-Needs Node 20 or later.
+You need [Node.js](https://nodejs.org) 20 or later, the free program that runs Gardefou. Open a terminal (the window where you type commands), go to any project folder, and run:
 
 ```bash
-npx gardefou --base main
+npx github:maryam-salawudeen/gardefou --base main
 ```
 
-It compares your working tree with where your branch left `main`.
+It checks everything on your branch that isn't on `main` yet, using the rules only.
 
-For the free AI review on your own machine, [install Ollama](https://ollama.com), pull a model, and pass `--ai ollama`:
+For the free AI check on your own computer, [install Ollama](https://ollama.com), download a model once, and add `--ai ollama`:
 
 ```bash
 ollama pull qwen2.5-coder:7b
-npx gardefou --base main --ai ollama
 ```
 
-Nothing leaves your computer. `--model` picks another model. `--ai openai-compatible --ai-url http://localhost:1234/v1 --model <name>` uses LM Studio or another OpenAI-compatible server (set `AI_API_KEY` if it needs a key), and `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
+```bash
+npx github:maryam-salawudeen/gardefou --base main --ai ollama
+```
 
-Other options: `--pia-dir pia` writes the PIA drafts, `--format markdown` and `--format json` change the output, and `--fail-on high` makes it usable as a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
+Nothing leaves your computer. Other options:
 
-## Use it in any AI assistant
+- `--model <name>` picks another model.
+- `--ai openai-compatible --ai-url http://localhost:1234/v1 --model <name>` uses LM Studio or another OpenAI-compatible server. Set `AI_API_KEY` if it needs a key.
+- `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
+- `--pia-dir pia` saves the PIA drafts.
+- `--format markdown` or `--format json` changes the output.
+- `--fail-on high` stops a `git push` when used as a pre-push hook (a check that runs before your code is uploaded).
+- `--diff changes.diff` reviews a saved list of changes, and `--diff -` reads one typed or piped in.
 
-[`gardefou.md`](gardefou.md) is the whole review as one prompt: what to look for, how to report, the PIA outline, every section summary and the vendor table. The files in [`skill/`](skill) are the same prompt packaged for each assistant, built from the same source as the Action, so the assistant cites the same law and the same headquarters.
+## Use it in your AI assistant
+
+[`gardefou.md`](gardefou.md) is the whole review written as one set of instructions for an AI: what to look for, how to report, the PIA outline, every legal summary and the company list. The files in [`skill/`](skill) are the same instructions packaged for each assistant, so your assistant cites the same law as the Action.
 
 ### Coding assistants
 
-**Claude Code**, installed globally as a `/gardefou` skill it also uses on its own when a change adds a vendor, an AI provider or agent settings:
+**Claude Code**, as a `/gardefou` skill in every project. It also uses it on its own when a change adds a company, an AI provider or AI agent settings:
 
 ```bash
 mkdir -p ~/.claude/skills/gardefou && curl -sL https://raw.githubusercontent.com/maryam-salawudeen/gardefou/main/skill/claude-code/SKILL.md -o ~/.claude/skills/gardefou/SKILL.md
@@ -200,7 +244,7 @@ mkdir -p ~/.codex && curl -sL https://raw.githubusercontent.com/maryam-salawudee
 mkdir -p ~/.gemini/commands && curl -sL https://raw.githubusercontent.com/maryam-salawudeen/gardefou/main/skill/gardefou.toml -o ~/.gemini/commands/gardefou.toml
 ```
 
-**Cursor**, as a rule the agent pulls in when it's relevant. Run this in your project:
+**Cursor**, as a rule the AI pulls in when it's relevant. Run this in your project:
 
 ```bash
 mkdir -p .cursor/rules && curl -sL https://raw.githubusercontent.com/maryam-salawudeen/gardefou/main/skill/gardefou.mdc -o .cursor/rules/gardefou.mdc
@@ -212,30 +256,30 @@ mkdir -p .cursor/rules && curl -sL https://raw.githubusercontent.com/maryam-sala
 mkdir -p .github/prompts && curl -sL https://raw.githubusercontent.com/maryam-salawudeen/gardefou/main/skill/gardefou.prompt.md -o .github/prompts/gardefou.prompt.md
 ```
 
-To update any of these, run the same command again (for Codex, delete the old copy from `AGENTS.md` first).
+To update any of these, run the same command again. For Codex, delete the old copy from `AGENTS.md` first.
 
 ### Chat assistants
 
 | Assistant | Set it up as | What goes where |
 |---|---|---|
-| ChatGPT | A custom GPT | Paste [`skill/gpt-instructions.md`](skill/gpt-instructions.md) into Instructions and upload [`gardefou.md`](gardefou.md) under Knowledge. The full prompt is longer than the 8,000-character Instructions box. |
-| Claude (web, desktop, mobile) | A skill | Zip the `skill/claude-code` folder and upload it in Settings → Capabilities → Skills. Or paste `gardefou.md` into a project's instructions. |
+| ChatGPT | A custom GPT | Paste [`skill/gpt-instructions.md`](skill/gpt-instructions.md) into Instructions and upload [`gardefou.md`](gardefou.md) under Knowledge. The full version is too long for the Instructions box. |
+| Claude (web, desktop, mobile) | A skill | Zip the `skill/claude-code` folder and upload it in **Settings → Capabilities → Skills**. Or paste `gardefou.md` into a project's instructions. |
 | Gemini | A Gem | Paste `gardefou.md` as the instructions. |
-| Any other assistant | Its custom instructions, or your first message | Paste or upload `gardefou.md`. |
+| Any other assistant | Custom instructions, or your first message | Paste or upload `gardefou.md`. |
 
-Then paste a diff and ask for a privacy and AI security review.
+Then paste a list of changes and ask for a privacy and AI security review.
 
-## Configure it
+## Settings
 
-Copy [`.gardefou.example.yml`](.gardefou.example.yml) to `.gardefou.yml`. The settings that matter most:
+Copy [`.gardefou.example.yml`](.gardefou.example.yml) to `.gardefou.yml` in your repository. The settings that matter most:
 
 ```yaml
 jurisdictions:
   provinces: [ON, QC, BC]   # where the people whose information you handle live; default all
-  health: false             # true for health custodians and the software they use
+  health: false             # true for clinics, pharmacies and the software they use
 
 ai:
-  approved_providers: [anthropic]   # anything else is a high-severity finding
+  approved_providers: [anthropic]   # any other AI company is a high-severity finding
   require_canadian_region: true
 
 vendors:
@@ -246,15 +290,15 @@ vendors:
 fail_on: high
 ```
 
-Changes to this file go through a pull request like any other code, so an exception to the AI policy is reviewed and recorded where everyone can see it.
+Changes to this file go through a pull request like any other code, so every exception to your AI policy is reviewed and recorded where everyone can see it.
 
 ## Limits
 
-- It reads the diff, not the running app. It can't see data that flows through code it doesn't recognise, or vendors loaded by a tag manager at runtime. [Law 25 Transfer Mapper](https://github.com/maryam-salawudeen/law25-transfer-mapper) covers what a live website actually sends.
-- Detection works on patterns and names. A column called `notes` that holds diagnoses, or a prompt built in another file, can be missed by the rules; the AI review catches some of these.
-- It doesn't replace a secret scanner, dependency scanner or general code review. It covers personal information and AI use.
-- Headquarters isn't the processing location. Confirm where each vendor processes data in its data processing agreement.
-- Public bodies (governments, municipalities, school boards, hospitals) are covered by provincial public sector laws, which aren't included yet.
+- **It reads the change, not the running app.** It can't see data that flows through code it doesn't recognise, or companies a website loads later. [Law 25 Transfer Mapper](https://github.com/maryam-salawudeen/law25-transfer-mapper) checks what a live website actually sends.
+- **It works on patterns and names.** A column called `notes` that holds diagnoses, or a prompt built in another file, can slip past the rules. The AI check catches some of these.
+- **It covers personal information and AI use.** It doesn't replace a secret scanner, a tool that checks your code libraries for known security holes, or a general code review.
+- **A company's headquarters isn't always where it stores data.** Confirm that in each company's data processing agreement, the contract that says how it handles your data.
+- **Public bodies aren't covered yet.** Governments, municipalities, school boards and hospitals follow provincial public sector laws, which Gardefou doesn't include.
 
 ## Development
 
@@ -264,10 +308,12 @@ npm test
 npm run review -- --diff test/fixtures/signup.diff
 ```
 
-`npm run build` bundles the Action and the command into `dist/`, and `npm run skill` rebuilds the prompt files. Commit both: GitHub runs the Action straight from `dist/`, and CI fails if either is out of date.
+`npm run build` prepares the files in `dist/`, and `npm run skill` rebuilds the AI assistant files. Commit both: GitHub runs the Action straight from `dist/`, and the tests fail if either is out of date.
 
-To add a vendor, add it to `data/packages.json` with a source for its headquarters in the pull request. To add a section, add it to `src/law.ts` with a summary that stays within what the section says.
+To add a company, add it to `data/packages.json` and link a source for its headquarters in the pull request. To add a legal section, add it to `src/law.ts` with a summary that stays within what the section says.
+
+If you try it, tell me what it caught, or what it missed, and I'll add a rule for it.
 
 ## Licence
 
-MIT
+MIT. Use it, change it, share it.
