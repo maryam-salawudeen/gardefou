@@ -1,5 +1,5 @@
-name: Gardefou
-description: Reviews pull requests for personal information under Canadian privacy law and for unsafe use of AI, and drafts the privacy impact assessment when data goes to a new vendor.
+name: Gardefou Privacy and AI Review
+description: Reviews pull requests for unsafe AI use and for personal information under Canadian privacy law.
 author: Maryam Salawudeen
 branding:
   icon: shield
