@@ -59,10 +59,25 @@ AI findings also cite the [OPC's generative AI principles](https://www.priv.gc.c
 
 It's a security tool, so it holds itself to the same rules:
 
-- Without an API key it runs entirely on rules, on the GitHub runner or your machine. Nothing leaves except the comments it posts to GitHub.
-- With a key, Claude checks each finding in context, drops the ones that don't hold up, and adds what the rules missed. Before the diff is sent, secrets are always removed, and emails, SINs, phone and card numbers are too unless you set `ai.redact: false`. The summary says how many values were removed.
+- By default it runs entirely on rules, on the GitHub runner or your machine. Nothing leaves except the comments it posts to GitHub.
+- When you turn on the AI review, a model checks each finding in context, drops the ones that don't hold up, and adds what the rules missed. Before the diff is sent, secrets are always removed, and emails, SINs, phone and card numbers are too unless you set `ai.redact: false`. The summary says how many values were removed.
+- A model can't dismiss a leaked key. Secret findings stay even if the model says otherwise.
 - Comments never quote a secret. The line is shown with the key replaced by `[REDACTED ...]`.
 - The AI review is told to treat the diff as data and ignore instructions inside it, and it can only cite the sections in `src/law.ts` and comment on lines the pull request adds.
+
+## The AI review, free or paid
+
+The rules find most problems on their own. The AI review is an optional second pass that reads each finding in context, removes false alarms, rewrites the comment for the actual code, and adds what the rules missed. You can run it three ways:
+
+| | Cost | Where the diff goes | Best for |
+|---|---|---|---|
+| **Ollama** | Free | Nowhere. An open model runs on the GitHub runner or your own computer | Most teams, and any code you can't send to a third party |
+| **Another OpenAI-compatible server** | Depends on the server | That server | LM Studio or vLLM on your own hardware, or a hosted provider you already use |
+| **Claude** | Paid, with your Anthropic API key | Anthropic | Large pull requests and the most thorough review |
+
+A small open model on a runner's CPU is slower and less thorough than Claude, so Gardefou sends it a trimmed prompt: the files with findings first, and only the sections those findings cite. On a large pull request, part of the diff is left out and the summary says so. If the model can't be reached or gives an unusable answer, the rule findings are still posted and the summary says why.
+
+If you use a hosted provider's free tier, read its terms first. Some free tiers use what you send to train their models, which is the kind of disclosure this tool is meant to catch.
 
 ## What a comment looks like
 
@@ -80,7 +95,7 @@ The pull request also gets one summary comment, kept up to date on each push, wi
 
 ## Use it as a GitHub Action
 
-Add `.github/workflows/gardefou.yml`:
+Add `.github/workflows/gardefou.yml`. This version includes the free AI review, running an open model with Ollama on the runner:
 
 ```yaml
 name: Privacy and AI review
@@ -95,12 +110,27 @@ permissions:
 jobs:
   review:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODEL: qwen2.5-coder:3b
     steps:
       - uses: actions/checkout@v4
+
+      - name: Start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          # The installer starts a service only where systemd runs, which
+          # isn't every runner, so start the server if it isn't answering.
+          curl -sf http://localhost:11434/api/tags >/dev/null || (nohup ollama serve > /tmp/ollama.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
+          ollama pull "$MODEL"
+
       - uses: maryam-salawudeen/gardefou@v0
         id: review
         with:
-          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }} # optional
+          ai-provider: ollama
+          model: ${{ env.MODEL }}
+
       - uses: actions/upload-artifact@v4
         if: steps.review.outputs.pia-dir != ''
         with:
@@ -108,12 +138,19 @@ jobs:
           path: ${{ steps.review.outputs.pia-dir }}
 ```
 
+For rules only, delete the "Start Ollama" step and the `with:` block. For Claude, replace the `with:` block with `anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}`.
+
+The Ollama step adds a few minutes to each run, because the runner downloads the model and runs it on its CPU. A 3-billion-parameter model like `qwen2.5-coder:3b` is a good balance on GitHub's standard runners; larger models are more thorough but slower. The step installs Ollama with its official install script; if your policy requires pinned installs, set `OLLAMA_VERSION` before the script runs.
+
 It runs on `pull_request`, not `pull_request_target`, so code from forks never runs with your secrets. On pull requests from forks, the token is read-only and the review appears in the job summary instead of as comments.
 
 | Input | Default | |
 |---|---|---|
-| `anthropic-api-key` | none | Turns on the AI review |
-| `model` | `claude-opus-5-5` | Claude model for the AI review |
+| `ai-provider` | `auto` | `ollama` (free), `openai-compatible`, `anthropic`, `none`, or `auto` (Claude if a key is set, otherwise rules only) |
+| `model` | `qwen2.5-coder:7b` for Ollama, `claude-opus-5-5` for Claude | Required for `openai-compatible` |
+| `ai-url` | `http://localhost:11434` for Ollama | Required for `openai-compatible` |
+| `ai-api-key` | none | For an `openai-compatible` server that needs a key |
+| `anthropic-api-key` | none | For `ai-provider: anthropic` |
 | `fail-on` | from the config file | Fail the check at `high`, `medium` or `low` |
 | `config-path` | `.gardefou.yml` | |
 | `pia-dir` | `gardefou-pia` | Where PIA drafts are written |
@@ -126,7 +163,18 @@ Needs Node 20 or later.
 npx gardefou --base main
 ```
 
-It compares your working tree with where your branch left `main`. Add `--ai` to have Claude check the findings (it reads `ANTHROPIC_API_KEY` and costs API credits), `--pia-dir pia` to write the PIA drafts, `--format markdown` or `--format json` for other output, and `--fail-on high` to use it in a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
+It compares your working tree with where your branch left `main`.
+
+For the free AI review on your own machine, [install Ollama](https://ollama.com), pull a model, and pass `--ai ollama`:
+
+```bash
+ollama pull qwen2.5-coder:7b
+npx gardefou --base main --ai ollama
+```
+
+Nothing leaves your computer. `--model` picks another model. `--ai openai-compatible --ai-url http://localhost:1234/v1 --model <name>` uses LM Studio or another OpenAI-compatible server (set `AI_API_KEY` if it needs a key), and `--ai anthropic` uses Claude with `ANTHROPIC_API_KEY`.
+
+Other options: `--pia-dir pia` writes the PIA drafts, `--format markdown` and `--format json` change the output, and `--fail-on high` makes it usable as a pre-push hook. `--diff changes.diff` reviews a saved diff and `--diff -` reads one from stdin.
 
 ## Use it in any AI assistant
 

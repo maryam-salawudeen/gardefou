@@ -76,7 +76,6 @@ export function terminalReport(result: ReviewResult, config: Config): string {
     if (sources) out.push(indent(sources));
     out.push("");
   }
-  if (result.ai.error) out.push(`AI review skipped: ${result.ai.error}`);
   return out.join("\n");
 }
 

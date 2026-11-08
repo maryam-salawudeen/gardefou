@@ -14,7 +14,7 @@ const { review } = await import("../src/review.js");
 const { loadVendors } = await import("../src/vendors.js");
 
 const fixture = readFileSync(new URL("./fixtures/signup.diff", import.meta.url), "utf8");
-const opts = { config: DEFAULT_CONFIG, db: loadVendors(), ai: { apiKey: "test" }, pia: { date: "2026-11-07" } };
+const opts = { config: DEFAULT_CONFIG, db: loadVendors(), ai: { provider: "anthropic" as const, apiKey: "test" }, pia: { date: "2026-11-07" } };
 
 describe("AI pass", () => {
   it("applies verdicts and keeps only additions that point at added lines", async () => {

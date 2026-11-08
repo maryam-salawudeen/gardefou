@@ -4,7 +4,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { loadConfig } from "./config.js";
 import { fingerprint, inlineComment, MARKER, summaryComment } from "./format.js";
-import { review, shouldFail } from "./review.js";
+import { review, shouldFail, type ReviewOptions } from "./review.js";
 import type { Severity } from "./types.js";
 import { loadVendors } from "./vendors.js";
 
@@ -31,13 +31,12 @@ async function run() {
     mediaType: { format: "diff" },
   })) as unknown as { data: string };
 
-  const apiKey = core.getInput("anthropic-api-key");
-  if (apiKey) core.setSecret(apiKey);
+  const ai = aiFromInputs();
 
   const result = await review(diff, {
     config,
     db: loadVendors(),
-    ai: apiKey ? { apiKey, model: core.getInput("model") || undefined } : null,
+    ai,
     pia: {
       repo: `${owner}/${repo}`,
       pullRequest: { number: pr.number, url: pr.html_url ?? "", title: pr.title ?? "" },
@@ -74,6 +73,35 @@ async function run() {
 
   if (shouldFail(result.findings, config)) {
     core.setFailed(`Privacy review found issues at "${config.failOn}" severity or above.`);
+  }
+}
+
+/**
+ * "auto" uses Claude when a key is given and runs rules only otherwise, so the
+ * Action never sends code anywhere new unless the workflow asks for it.
+ */
+function aiFromInputs(): ReviewOptions["ai"] {
+  const anthropicKey = core.getInput("anthropic-api-key");
+  const otherKey = core.getInput("ai-api-key");
+  for (const key of [anthropicKey, otherKey]) if (key) core.setSecret(key);
+  const choice = core.getInput("ai-provider") || "auto";
+  const model = core.getInput("model") || undefined;
+  const baseUrl = core.getInput("ai-url") || undefined;
+
+  switch (choice) {
+    case "none":
+      return null;
+    case "auto":
+      return anthropicKey ? { provider: "anthropic", apiKey: anthropicKey, model } : null;
+    case "anthropic":
+      if (!anthropicKey) throw new Error("ai-provider is anthropic but anthropic-api-key is empty.");
+      return { provider: "anthropic", apiKey: anthropicKey, model };
+    case "ollama":
+      return { provider: "ollama", model, baseUrl };
+    case "openai-compatible":
+      return { provider: "openai-compatible", apiKey: otherKey || undefined, model, baseUrl };
+    default:
+      throw new Error(`ai-provider must be auto, none, ollama, openai-compatible or anthropic, not "${choice}".`);
   }
 }
 

@@ -9,12 +9,25 @@ inputs:
   github-token:
     description: Token used to read the diff and post comments.
     default: ${{ github.token }}
+  ai-provider:
+    description: >-
+      Which AI checks each rule finding in context and looks for ones the rules missed.
+      auto (Claude if anthropic-api-key is set, otherwise rules only), none,
+      ollama (free; an Ollama server on the runner, see the README),
+      openai-compatible (any OpenAI-compatible server, with ai-url and model), or anthropic.
+    default: auto
   anthropic-api-key:
-    description: Optional. With a key, Claude checks each rule finding in context and looks for ones the rules missed. Without one, the review runs on rules alone.
+    description: Anthropic API key, for the anthropic provider.
+    required: false
+  ai-url:
+    description: Server URL for ollama (default http://localhost:11434) or openai-compatible.
+    required: false
+  ai-api-key:
+    description: API key for an openai-compatible server, if it needs one.
     required: false
   model:
-    description: Claude model for the AI pass.
-    default: claude-opus-5-5
+    description: Model for the AI review. Defaults to qwen2.5-coder:7b for ollama and claude-opus-5-5 for anthropic; required for openai-compatible.
+    required: false
   config-path:
     description: Path to the config file.
     default: .gardefou.yml
